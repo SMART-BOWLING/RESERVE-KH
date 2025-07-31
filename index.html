@@ -92,10 +92,11 @@
     }
 
     .booking-card {
+      position: relative;
       background: white;
       border: 1px solid #dc143c;
       border-radius: 8px;
-      padding: 10px 15px;
+      padding: 10px 40px 10px 15px; /* справа увеличен отступ под крестик */
       color: #dc143c;
       font-weight: bold;
       font-size: 14px;
@@ -103,6 +104,30 @@
       user-select: none;
       box-shadow: 0 2px 5px rgba(220, 20, 60, 0.2);
       cursor: default;
+    }
+
+    .booking-card .close-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      transform: translate(50%, -50%);
+      color: #dc143c;
+      background: white;
+      border: 1px solid #dc143c;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+      padding: 6px 10px;
+      box-shadow: 0 0 5px rgba(220,20,60,0.4);
+      transition: background-color 0.2s ease;
+    }
+
+    .booking-card .close-btn:hover {
+      background-color: #dc143c;
+      color: white;
     }
 
     .booking-button {
@@ -371,7 +396,7 @@
 
     for (const laneStr in intervalsByLane) {
       const lane = parseInt(laneStr);
-      intervalsByLane[lane].forEach(interval => {
+      intervalsByLane[lane].forEach((interval, index) => {
         const start = Math.min(interval.start, interval.end);
         const end = Math.max(interval.start, interval.end);
 
@@ -384,6 +409,19 @@
         const card = document.createElement("div");
         card.className = "booking-card";
         card.textContent = `Стол № ${lane + 1} с ${startDisplay} по ${endDisplay}`;
+
+        // Кнопка крестика удаления
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "close-btn";
+        closeBtn.innerHTML = "&times;";
+        closeBtn.title = "Удалить бронирование";
+        closeBtn.onclick = function(e) {
+          e.stopPropagation();
+          intervalsByLane[lane].splice(index, 1);
+          updateTableSelection();
+        };
+
+        card.appendChild(closeBtn);
         cardsContainer.appendChild(card);
       });
     }
