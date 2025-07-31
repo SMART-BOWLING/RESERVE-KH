@@ -219,8 +219,6 @@
       cursor: pointer;
       transition: background 0.2s ease, color 0.2s ease;
       appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
     }
 
     #dateInput:hover {
@@ -232,6 +230,46 @@
       cursor: pointer;
     }
 
+    .image-popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .image-popup .popup-content {
+      position: relative;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow: auto;
+    }
+
+    .image-popup .popup-content img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .image-popup .close-popup {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #dc143c;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body>
@@ -241,7 +279,9 @@
     <tr>
       <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
       <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
-      <th class="time-col">Время</th>
+      <th class="time-col">
+        <button id="openImage" style="padding: 5px 10px; border: 1px solid #dc143c; background: white; color: #dc143c; border-radius: 5px; cursor: pointer;">СТОЛЫ</button>
+      </th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
@@ -264,6 +304,14 @@
       <button onclick="submitForm()">Ок</button>
       <button onclick="closeModal()">Отмена</button>
     </div>
+  </div>
+</div>
+
+<!-- Всплывающее окно с картинкой -->
+<div id="imagePopup" class="image-popup">
+  <div class="popup-content">
+    <button class="close-popup" onclick="closeImagePopup()">&times;</button>
+    <img src="https://i.postimg.cc/c4vbqDJn/2.png" alt="Картинка столов" />
   </div>
 </div>
 
@@ -343,7 +391,6 @@
     const lane = parseInt(cell.dataset.lane);
     const time = parseFloat(cell.dataset.time);
 
-    // 🔐 Блокировка выбора другого столбца
     if (currentStart !== null && lane !== currentLane) {
       alert("Сначала завершите бронирование в текущем столбце.");
       return;
@@ -483,6 +530,14 @@
     document.getElementById('nameInput').value = '';
     document.getElementById('phoneInput').value = '';
     document.getElementById('commentInput').value = '';
+  }
+
+  document.getElementById("openImage").addEventListener("click", () => {
+    document.getElementById("imagePopup").style.display = "flex";
+  });
+
+  function closeImagePopup() {
+    document.getElementById("imagePopup").style.display = "none";
   }
 
   updateTableSelection();
