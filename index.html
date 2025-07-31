@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Booking Table</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 4px 0;
+      table-layout: fixed;
+      width: fit-content;
+      user-select: none;
+      touch-action: manipulation;
+      max-height: 600px;
+      overflow: auto;
+      display: block;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f0f0f0;
+      z-index: 2;
+    }
+
+    th, td {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #ccc;
+      text-align: center;
+      vertical-align: middle;
+      box-sizing: border-box;
+      position: relative;
+      background: white;
+    }
+
+    th.time-col, .time-right {
+      background: #f0f0f0;
+      font-weight: bold;
+      width: 50px;
+      height: 50px;
+    }
+
+    td.slot {
+      cursor: pointer;
+    }
+
+    td.selected {
+      background-color: #dc143c !important;
+      border: none !important;
+    }
+
+    .time-label {
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      font-size: 10px;
+      color: white;
+      background: black;
+      padding: 1px 3px;
+      border-radius: 3px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .time-label.start {
+      top: 2px;
+    }
+
+    .time-label.end {
+      bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<table id="bookingTable">
+  <thead>
+    <tr>
+      <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+      <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+      <th class="time-col">Время</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+  const startHour = 12;
+  const endHour = 22;
+  const lanes = 12;
+  const tableBody = document.getElementById("tableBody");
+
+  const timeSlots = [];
+  for (let hour = startHour; hour < endHour; hour++) {
+    timeSlots.push({ display: `${hour}:00`, key: `${hour}.0` });
+    timeSlots.push({ display: `${hour}:30`, key: `${hour}.5` });
+  }
+
+  timeSlots.forEach(slot => {
+    const row = document.createElement("tr");
+    for (let lane = 0; lane < lanes; lane++) {
+      const cell = document.createElement("td");
+      cell.classList.add("slot");
+      cell.dataset.lane = lane;
+      cell.dataset.time = slot.key;
+      cell.dataset.display = slot.display;
+      row.appendChild(cell);
+    }
+
+    const timeCell = document.createElement("th");
+    timeCell.className = "time-right";
+    timeCell.textContent = slot.display;
+    row.appendChild(timeCell);
+    tableBody.appendChild(row);
+  });
+
+  let currentStart = null;
+
+  function getAllSlots() {
+    return document.querySelectorAll("td.slot");
+  }
+
+  function getIntervalsByLane() {
+    const intervals = {};
+    getAllSlots().forEach(cell => {
+      if (cell.classList.contains('selected')) {
+        const lane = cell.dataset.lane;
+        if (!intervals[lane]) intervals[lane] = [];
+        intervals[lane].push(cell);
+      }
+    });
+    for (const lane in intervals) {
+      intervals[lane].sort((a, b) => parseFloat(a.dataset.time) - parseFloat(b.dataset.time));
+    }
+    return intervals;
+  }
+
+  function clearLabels(cell) {
+    cell.querySelectorAll('.time-label').forEach(label => label.remove());
+  }
+
+  function clearAllLabels() {
+    getAllSlots().forEach(clearLabels);
+  }
+
+  function updateLabels() {
+    clearAllLabels();
+    const intervals = getIntervalsByLane();
+    for (const lane in intervals) {
+      const cells = intervals[lane];
+      if (cells.length === 0) continue;
+
+      let block = [];
+      let prevTime = null;
+
+      cells.forEach((cell, i) => {
+        const time = parseFloat(cell.dataset.time);
+        if (prevTime === null || time === prevTime + 0.5) {
+          block.push(cell);
+        } else {
+          placeLabels(block);
+          block = [cell];
+        }
+        prevTime = time;
+        if (i === cells.length - 1) {
+          placeLabels(block);
+        }
+      });
+    }
+
+    function placeLabels(cells) {
+      if (cells.length === 0) return;
+      const start = document.createElement("div");
+      start.className = "time-label start";
+      start.textContent = cells[0].dataset.display;
+      cells[0].appendChild(start);
+
+      if (cells.length > 1) {
+        const end = document.createElement("div");
+        end.className = "time-label end";
+        end.textContent = cells[cells.length - 1].dataset.display;
+        cells[cells.length - 1].appendChild(end);
+      }
+    }
+  }
+
+  getAllSlots().forEach(cell => {
+    cell.addEventListener("click", () => {
+      if (!cell.classList.contains('selected')) {
+        if (!currentStart) {
+          currentStart = cell;
+          cell.classList.add('selected');
+          updateLabels();
+        } else if (cell.dataset.lane === currentStart.dataset.lane) {
+          const lane = cell.dataset.lane;
+          const startTime = parseFloat(currentStart.dataset.time);
+          const endTime = parseFloat(cell.dataset.time);
+          const min = Math.min(startTime, endTime);
+          const max = Math.max(startTime, endTime);
+
+          getAllSlots().forEach(c => {
+            if (c.dataset.lane === lane) {
+              const t = parseFloat(c.dataset.time);
+              if (t >= min && t <= max) c.classList.add('selected');
+            }
+          });
+          currentStart = null;
+          updateLabels();
+        } else {
+          currentStart = cell;
+          cell.classList.add('selected');
+          updateLabels();
+        }
+      } else {
+        cell.classList.remove('selected');
+        if (currentStart === cell) currentStart = null;
+        updateLabels();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
