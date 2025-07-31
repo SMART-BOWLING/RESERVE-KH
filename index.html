@@ -226,7 +226,9 @@
 
   getAllSlots().forEach(cell => {
     cell.addEventListener("click", () => {
-      if (!cell.classList.contains('selected')) {
+      const isSelected = cell.classList.contains('selected');
+
+      if (!isSelected) {
         if (!currentStart) {
           currentStart = cell;
           cell.classList.add('selected');
@@ -252,8 +254,21 @@
           updateLabels();
         }
       } else {
-        cell.classList.remove('selected');
-        if (currentStart === cell) currentStart = null;
+        // Клик по выделенной ячейке
+        const lane = cell.dataset.lane;
+        const time = parseFloat(cell.dataset.time);
+        const selectedCells = Array.from(document.querySelectorAll(`td.selected[data-lane="${lane}"]`))
+          .sort((a, b) => parseFloat(a.dataset.time) - parseFloat(b.dataset.time));
+
+        const first = selectedCells[0];
+        const last = selectedCells[selectedCells.length - 1];
+
+        if (cell !== first && cell !== last) {
+          return; // Нельзя снять середину
+        }
+
+        selectedCells.forEach(c => c.classList.remove('selected'));
+        currentStart = null;
         updateLabels();
       }
     });
@@ -298,7 +313,6 @@
     closeModal();
     alert("Бронирование принято!");
 
-    // Очистка выбора
     document.querySelectorAll('td.selected').forEach(cell => cell.classList.remove('selected'));
     currentStart = null;
     updateLabels();
