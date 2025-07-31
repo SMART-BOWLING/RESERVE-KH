@@ -11,7 +11,7 @@
 
     @media (max-width: 768px) {
       :root {
-        --cell-size: calc((100vw - 20px) / 13); /* 12 дорожек + колонка "Время" */
+        --cell-size: calc((100vw - 20px) / 13);
       }
     }
 
@@ -21,7 +21,8 @@
       padding: 10px;
       margin: 0;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
     }
 
     table {
@@ -103,6 +104,25 @@
   </thead>
   <tbody id="tableBody"></tbody>
 </table>
+
+<!-- Кнопка бронирования -->
+<div style="margin-top: 20px; text-align: center;">
+  <button onclick="openModal()" style="padding: 10px 20px; font-size: 16px; background: #dc143c; color: white; border: none; border-radius: 5px;">Забронировать</button>
+</div>
+
+<!-- Модальное окно -->
+<div id="modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#00000066; justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+    <h3 style="margin-top:0;">Введите данные</h3>
+    <label>Имя:<br><input id="nameInput" style="width:100%; padding:8px; margin-bottom:10px;"></label><br>
+    <label>Телефон:<br><input id="phoneInput" style="width:100%; padding:8px; margin-bottom:10px;"></label><br>
+    <label>Комментарий:<br><textarea id="commentInput" style="width:100%; padding:8px; margin-bottom:10px;"></textarea></label><br>
+    <div style="text-align:right;">
+      <button onclick="submitForm()" style="padding: 8px 16px; background:#dc143c; color:white; border:none; border-radius:5px;">Ок</button>
+      <button onclick="closeModal()" style="padding: 8px 16px; margin-left:10px;">Отмена</button>
+    </div>
+  </div>
+</div>
 
 <script>
   const startHour = 12;
@@ -238,6 +258,51 @@
       }
     });
   });
+
+  function openModal() {
+    const selected = document.querySelectorAll('td.selected');
+    if (selected.length === 0) {
+      alert('Сначала выберите время.');
+      return;
+    }
+    document.getElementById('modal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+  }
+
+  function submitForm() {
+    const name = document.getElementById('nameInput').value.trim();
+    const phone = document.getElementById('phoneInput').value.trim();
+    const comment = document.getElementById('commentInput').value.trim();
+
+    if (!name || !phone) {
+      alert("Пожалуйста, введите имя и телефон.");
+      return;
+    }
+
+    const selections = [];
+    document.querySelectorAll('td.selected').forEach(cell => {
+      selections.push({
+        lane: parseInt(cell.dataset.lane) + 1,
+        time: cell.dataset.display
+      });
+    });
+
+    console.log("Имя:", name);
+    console.log("Телефон:", phone);
+    console.log("Комментарий:", comment);
+    console.log("Выбранные слоты:", selections);
+
+    closeModal();
+    alert("Бронирование принято!");
+
+    // Очистка выбора
+    document.querySelectorAll('td.selected').forEach(cell => cell.classList.remove('selected'));
+    currentStart = null;
+    updateLabels();
+  }
 </script>
 
 </body>
