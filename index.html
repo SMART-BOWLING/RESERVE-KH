@@ -96,7 +96,7 @@
       background: white;
       border: 1px solid #dc143c;
       border-radius: 8px;
-      padding: 10px 40px 10px 15px; /* справа увеличен отступ под крестик */
+      padding: 10px 40px 10px 15px;
       color: #dc143c;
       font-weight: bold;
       font-size: 14px;
@@ -211,11 +211,25 @@
     }
 
     #dateInput {
-      padding: 8px 12px;
+      padding: 10px 20px;
       font-size: 16px;
+      background: white;
+      color: #333;
+      border: 2px solid #dc143c;
       border-radius: 5px;
-      border: 1px solid #ccc;
-      max-width: 200px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    #dateInput:hover {
+      background: #f9f9f9;
+    }
+
+    #dateInput::-webkit-calendar-picker-indicator {
+      filter: invert(28%) sepia(92%) saturate(7462%) hue-rotate(342deg) brightness(98%) contrast(104%);
       cursor: pointer;
     }
 
@@ -236,7 +250,6 @@
 
 <div id="cardsContainer"></div>
 
-<!-- Новый контейнер с датой и кнопкой -->
 <div id="controls">
   <input type="date" id="dateInput" />
   <button class="booking-button" onclick="openModal()">Забронировать</button>
@@ -256,7 +269,6 @@
 </div>
 
 <script>
-  // Установим минимальную дату - сегодня
   const dateInput = document.getElementById('dateInput');
   const today = new Date().toISOString().split('T')[0];
   dateInput.min = today;
@@ -395,7 +407,6 @@
     }
 
     const selectedDate = dateInput.value;
-    // Преобразуем дату из "YYYY-MM-DD" в "DD.MM.YYYY"
     const dateParts = selectedDate.split("-");
     const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : selectedDate;
 
@@ -413,11 +424,8 @@
 
         const card = document.createElement("div");
         card.className = "booking-card";
-
-        // Добавлена дата в карточку
         card.textContent = `Стол № ${lane + 1} | ${formattedDate} | с ${startDisplay} по ${endDisplay}`;
 
-        // Кнопка крестика удаления
         const closeBtn = document.createElement("button");
         closeBtn.className = "close-btn";
         closeBtn.innerHTML = "&times;";
@@ -461,12 +469,6 @@
       alert("Пожалуйста, выберите дату.");
       return;
     }
-
-    console.log("Дата бронирования:", date);
-    console.log("Имя:", name);
-    console.log("Телефон:", phone);
-    console.log("Комментарий:", comment);
-    console.log("Интервалы бронирования:", intervalsByLane);
 
     closeModal();
 
