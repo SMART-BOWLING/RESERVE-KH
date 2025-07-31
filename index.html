@@ -10,11 +10,16 @@
       --main-color: #1a2f40;
     }
 
-    @media (max-width: 768px) {
-      :root {
-        --cell-size: calc((100vw - 20px) / 13);
-      }
-    }
+@media (max-width: 768px) {
+  :root {
+    --cell-size: calc((100vw - 20px) / 13);
+  }
+
+  td, th {
+    aspect-ratio: 1;
+    height: auto;
+  }
+}
 
     body {
       font-family: 'Segoe UI', sans-serif;
