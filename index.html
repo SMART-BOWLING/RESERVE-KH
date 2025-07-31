@@ -70,25 +70,109 @@
       border: none !important;
     }
 
-    .time-label {
-      position: absolute;
-      left: 2px;
-      right: 2px;
-      font-size: 10px;
+    td.selected.rounded-top {
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    td.selected.rounded-bottom {
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+
+    #cardsContainer {
+      margin: 20px 0 10px 0;
+      width: 100%;
+      max-width: 100vw;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 0 10px;
+    }
+
+    .booking-card {
+      background: white;
+      border: 1px solid #dc143c;
+      border-radius: 8px;
+      padding: 10px 15px;
+      color: #dc143c;
+      font-weight: bold;
+      font-size: 14px;
+      white-space: nowrap;
+      user-select: none;
+      box-shadow: 0 2px 5px rgba(220, 20, 60, 0.2);
+      cursor: default;
+    }
+
+    .booking-button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #dc143c;
       color: white;
-      background: black;
-      padding: 1px 3px;
-      border-radius: 3px;
-      z-index: 1;
-      pointer-events: none;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
 
-    .time-label.start {
-      top: 2px;
+    .booking-button:hover {
+      background: #b01030;
     }
 
-    .time-label.end {
-      bottom: 2px;
+    #modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #00000066;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #modal > div {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    #modal h3 {
+      margin-top: 0;
+    }
+
+    #modal label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    #modal input, #modal textarea {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      margin-top: 4px;
+    }
+
+    #modal textarea {
+      resize: vertical;
+    }
+
+    #modal button {
+      padding: 8px 16px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+
+    #modal button:first-of-type {
+      background: #dc143c;
+      color: white;
+    }
+
+    #modal button:last-of-type {
+      margin-left: 10px;
+      background: #eee;
     }
   </style>
 </head>
@@ -105,35 +189,36 @@
   <tbody id="tableBody"></tbody>
 </table>
 
-<!-- Кнопка бронирования -->
-<div style="margin-top: 20px; text-align: center;">
-  <button onclick="openModal()" style="padding: 10px 20px; font-size: 16px; background: #dc143c; color: white; border: none; border-radius: 5px;">Забронировать</button>
+<div id="cardsContainer"></div>
+
+<div style="margin-top: 10px; text-align: center;">
+  <button class="booking-button" onclick="openModal()">Забронировать</button>
 </div>
 
-<!-- Модальное окно -->
-<div id="modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#00000066; justify-content:center; align-items:center; z-index:1000;">
-  <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
-    <h3 style="margin-top:0;">Введите данные</h3>
-    <label>Имя:<br><input id="nameInput" style="width:100%; padding:8px; margin-bottom:10px;"></label><br>
-    <label>Телефон:<br><input id="phoneInput" style="width:100%; padding:8px; margin-bottom:10px;"></label><br>
-    <label>Комментарий:<br><textarea id="commentInput" style="width:100%; padding:8px; margin-bottom:10px;"></textarea></label><br>
-    <div style="text-align:right;">
-      <button onclick="submitForm()" style="padding: 8px 16px; background:#dc143c; color:white; border:none; border-radius:5px;">Ок</button>
-      <button onclick="closeModal()" style="padding: 8px 16px; margin-left:10px;">Отмена</button>
+<div id="modal">
+  <div>
+    <h3>Введите данные</h3>
+    <label>Имя:<br><input id="nameInput" autocomplete="off"></label>
+    <label>Телефон:<br><input id="phoneInput" autocomplete="off"></label>
+    <label>Комментарий:<br><textarea id="commentInput"></textarea></label>
+    <div style="text-align: right;">
+      <button onclick="submitForm()">Ок</button>
+      <button onclick="closeModal()">Отмена</button>
     </div>
   </div>
 </div>
 
 <script>
-  const startHour = 12;
-  const endHour = 22;
+  const startHour = 11;
+  const endHour = 21;
   const lanes = 12;
   const tableBody = document.getElementById("tableBody");
+  const cardsContainer = document.getElementById("cardsContainer");
 
   const timeSlots = [];
   for (let hour = startHour; hour < endHour; hour++) {
-    timeSlots.push({ display: `${hour}:00`, key: `${hour}.0` });
-    timeSlots.push({ display: `${hour}:30`, key: `${hour}.5` });
+    timeSlots.push({ display: `${hour}:00`, key: hour });
+    timeSlots.push({ display: `${hour}:30`, key: hour + 0.5 });
   }
 
   timeSlots.forEach(slot => {
@@ -154,129 +239,131 @@
     tableBody.appendChild(row);
   });
 
+  const intervalsByLane = {};
+  let currentLane = null;
   let currentStart = null;
 
-  function getAllSlots() {
-    return document.querySelectorAll("td.slot");
-  }
-
-  function getIntervalsByLane() {
-    const intervals = {};
-    getAllSlots().forEach(cell => {
-      if (cell.classList.contains('selected')) {
-        const lane = cell.dataset.lane;
-        if (!intervals[lane]) intervals[lane] = [];
-        intervals[lane].push(cell);
-      }
+  function updateTableSelection() {
+    document.querySelectorAll("td.selected").forEach(c => {
+      c.classList.remove("selected", "rounded-top", "rounded-bottom");
     });
-    for (const lane in intervals) {
-      intervals[lane].sort((a, b) => parseFloat(a.dataset.time) - parseFloat(b.dataset.time));
-    }
-    return intervals;
-  }
 
-  function clearLabels(cell) {
-    cell.querySelectorAll('.time-label').forEach(label => label.remove());
-  }
+    for (const laneStr in intervalsByLane) {
+      const lane = parseInt(laneStr);
+      intervalsByLane[lane].forEach(interval => {
+        const start = Math.min(interval.start, interval.end);
+        const end = Math.max(interval.start, interval.end);
 
-  function clearAllLabels() {
-    getAllSlots().forEach(clearLabels);
-  }
+        document.querySelectorAll(`td.slot[data-lane="${lane}"]`).forEach(cell => {
+          const t = parseFloat(cell.dataset.time);
+          if (t >= start && t <= end) {
+            cell.classList.add("selected");
+          }
+        });
 
-  function updateLabels() {
-    clearAllLabels();
-    const intervals = getIntervalsByLane();
-    for (const lane in intervals) {
-      const cells = intervals[lane];
-      if (cells.length === 0) continue;
+        const startCell = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${start}"]`);
+        const endCell = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${end}"]`);
 
-      let block = [];
-      let prevTime = null;
-
-      cells.forEach((cell, i) => {
-        const time = parseFloat(cell.dataset.time);
-        if (prevTime === null || time === prevTime + 0.5) {
-          block.push(cell);
-        } else {
-          placeLabels(block);
-          block = [cell];
-        }
-        prevTime = time;
-        if (i === cells.length - 1) {
-          placeLabels(block);
-        }
+        if (startCell) startCell.classList.add("rounded-top");
+        if (endCell && end !== start) endCell.classList.add("rounded-bottom");
       });
     }
 
-    function placeLabels(cells) {
-      if (cells.length === 0) return;
-      const start = document.createElement("div");
-      start.className = "time-label start";
-      start.textContent = cells[0].dataset.display;
-      cells[0].appendChild(start);
+    updateBookingCards();
+  }
 
-      if (cells.length > 1) {
-        const end = document.createElement("div");
-        end.className = "time-label end";
-        end.textContent = cells[cells.length - 1].dataset.display;
-        cells[cells.length - 1].appendChild(end);
+  tableBody.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("slot")) return;
+
+    const cell = e.target;
+    const lane = parseInt(cell.dataset.lane);
+    const time = parseFloat(cell.dataset.time);
+
+    if (!intervalsByLane[lane]) intervalsByLane[lane] = [];
+
+    if (currentLane === null) {
+      currentLane = lane;
+      currentStart = time;
+      intervalsByLane[lane].push({ start: time, end: time });
+      updateTableSelection();
+      return;
+    }
+
+    if (lane === currentLane) {
+      if (time <= currentStart) {
+        alert("Конец интервала должен быть позже начала.");
+        return;
       }
+
+      intervalsByLane[lane].pop();
+      intervalsByLane[lane].push({ start: currentStart, end: time });
+
+      currentLane = null;
+      currentStart = null;
+
+      updateTableSelection();
+      return;
+    }
+
+    currentLane = lane;
+    currentStart = time;
+    intervalsByLane[lane].push({ start: time, end: time });
+    updateTableSelection();
+  });
+
+  tableBody.addEventListener("dblclick", (e) => {
+    if (!e.target.classList.contains("slot")) return;
+
+    const cell = e.target;
+    const lane = parseInt(cell.dataset.lane);
+    const time = parseFloat(cell.dataset.time);
+
+    if (!intervalsByLane[lane]) return;
+
+    const idx = intervalsByLane[lane].findIndex(interval => {
+      const start = Math.min(interval.start, interval.end);
+      const end = Math.max(interval.start, interval.end);
+      return time >= start && time <= end;
+    });
+
+    if (idx === -1) return;
+
+    intervalsByLane[lane].splice(idx, 1);
+    updateTableSelection();
+  });
+
+  function updateBookingCards() {
+    cardsContainer.innerHTML = "";
+
+    function formatTime(val) {
+      const h = Math.floor(val);
+      const m = val % 1 === 0.5 ? "30" : "00";
+      return `${h}:${m}`;
+    }
+
+    for (const laneStr in intervalsByLane) {
+      const lane = parseInt(laneStr);
+      intervalsByLane[lane].forEach(interval => {
+        const start = Math.min(interval.start, interval.end);
+        const end = Math.max(interval.start, interval.end);
+
+        const startCell = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${start}"]`);
+        const endCell = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${end}"]`);
+
+        const startDisplay = startCell?.dataset.display || formatTime(start);
+        const endDisplay = endCell?.dataset.display || formatTime(end);
+
+        const card = document.createElement("div");
+        card.className = "booking-card";
+        card.textContent = `Стол № ${lane + 1} с ${startDisplay} по ${endDisplay}`;
+        cardsContainer.appendChild(card);
+      });
     }
   }
 
-  getAllSlots().forEach(cell => {
-    cell.addEventListener("click", () => {
-      const isSelected = cell.classList.contains('selected');
-
-      if (!isSelected) {
-        if (!currentStart) {
-          currentStart = cell;
-          cell.classList.add('selected');
-          updateLabels();
-        } else if (cell.dataset.lane === currentStart.dataset.lane) {
-          const lane = cell.dataset.lane;
-          const startTime = parseFloat(currentStart.dataset.time);
-          const endTime = parseFloat(cell.dataset.time);
-          const min = Math.min(startTime, endTime);
-          const max = Math.max(startTime, endTime);
-
-          getAllSlots().forEach(c => {
-            if (c.dataset.lane === lane) {
-              const t = parseFloat(c.dataset.time);
-              if (t >= min && t <= max) c.classList.add('selected');
-            }
-          });
-          currentStart = null;
-          updateLabels();
-        } else {
-          currentStart = cell;
-          cell.classList.add('selected');
-          updateLabels();
-        }
-      } else {
-        // Клик по выделенной ячейке
-        const lane = cell.dataset.lane;
-        const time = parseFloat(cell.dataset.time);
-        const selectedCells = Array.from(document.querySelectorAll(`td.selected[data-lane="${lane}"]`))
-          .sort((a, b) => parseFloat(a.dataset.time) - parseFloat(b.dataset.time));
-
-        const first = selectedCells[0];
-        const last = selectedCells[selectedCells.length - 1];
-
-        if (cell !== first && cell !== last) {
-          return; // Нельзя снять середину
-        }
-
-        selectedCells.forEach(c => c.classList.remove('selected'));
-        currentStart = null;
-        updateLabels();
-      }
-    });
-  });
-
   function openModal() {
-    const selected = document.querySelectorAll('td.selected');
-    if (selected.length === 0) {
+    const hasSelected = Object.values(intervalsByLane).some(arr => arr.length > 0);
+    if (!hasSelected) {
       alert('Сначала выберите время.');
       return;
     }
@@ -297,27 +384,30 @@
       return;
     }
 
-    const selections = [];
-    document.querySelectorAll('td.selected').forEach(cell => {
-      selections.push({
-        lane: parseInt(cell.dataset.lane) + 1,
-        time: cell.dataset.display
-      });
-    });
-
     console.log("Имя:", name);
     console.log("Телефон:", phone);
     console.log("Комментарий:", comment);
-    console.log("Выбранные слоты:", selections);
+    console.log("Интервалы бронирования:", intervalsByLane);
 
     closeModal();
+
     alert("Бронирование принято!");
 
-    document.querySelectorAll('td.selected').forEach(cell => cell.classList.remove('selected'));
+    for (const lane in intervalsByLane) {
+      intervalsByLane[lane] = [];
+    }
+    currentLane = null;
     currentStart = null;
-    updateLabels();
+    updateTableSelection();
+
+    document.getElementById('nameInput').value = '';
+    document.getElementById('phoneInput').value = '';
+    document.getElementById('commentInput').value = '';
   }
+
+  updateTableSelection();
 </script>
 
 </body>
 </html>
+А
