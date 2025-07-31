@@ -2,24 +2,36 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Booking Table</title>
   <style>
+    :root {
+      --cell-size: 50px;
+    }
+
+    @media (max-width: 768px) {
+      :root {
+        --cell-size: calc((100vw - 20px) / 13); /* 12 дорожек + колонка "Время" */
+      }
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f0f2f5;
-      padding: 20px;
+      padding: 10px;
+      margin: 0;
       display: flex;
       justify-content: center;
     }
 
     table {
       border-collapse: separate;
-      border-spacing: 4px 0;
+      border-spacing: 2px 0;
       table-layout: fixed;
-      width: fit-content;
+      width: 100%;
+      max-width: 100vw;
       user-select: none;
       touch-action: manipulation;
-      max-height: 600px;
       overflow: auto;
       display: block;
     }
@@ -32,21 +44,20 @@
     }
 
     th, td {
-      width: 50px;
-      height: 50px;
+      width: var(--cell-size);
+      height: var(--cell-size);
       border: 1px solid #ccc;
       text-align: center;
       vertical-align: middle;
       box-sizing: border-box;
       position: relative;
       background: white;
+      font-size: 12px;
     }
 
     th.time-col, .time-right {
       background: #f0f0f0;
       font-weight: bold;
-      width: 50px;
-      height: 50px;
     }
 
     td.slot {
