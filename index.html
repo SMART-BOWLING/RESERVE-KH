@@ -394,6 +394,11 @@
       return `${h}:${m}`;
     }
 
+    const selectedDate = dateInput.value;
+    // Преобразуем дату из "YYYY-MM-DD" в "DD.MM.YYYY"
+    const dateParts = selectedDate.split("-");
+    const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : selectedDate;
+
     for (const laneStr in intervalsByLane) {
       const lane = parseInt(laneStr);
       intervalsByLane[lane].forEach((interval, index) => {
@@ -408,7 +413,9 @@
 
         const card = document.createElement("div");
         card.className = "booking-card";
-        card.textContent = `Стол № ${lane + 1} с ${startDisplay} по ${endDisplay}`;
+
+        // Добавлена дата в карточку
+        card.textContent = `Стол № ${lane + 1} | ${formattedDate} | с ${startDisplay} по ${endDisplay}`;
 
         // Кнопка крестика удаления
         const closeBtn = document.createElement("button");
