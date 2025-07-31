@@ -200,7 +200,6 @@
       background: #eee;
     }
 
-    /* Новый стиль для контейнера кнопки и даты */
     #controls {
       margin-top: 10px;
       display: flex;
@@ -344,6 +343,12 @@
     const lane = parseInt(cell.dataset.lane);
     const time = parseFloat(cell.dataset.time);
 
+    // 🔐 Блокировка выбора другого столбца
+    if (currentStart !== null && lane !== currentLane) {
+      alert("Сначала завершите бронирование в текущем столбце.");
+      return;
+    }
+
     if (!intervalsByLane[lane]) intervalsByLane[lane] = [];
 
     if (currentLane === null) {
@@ -367,13 +372,7 @@
       currentStart = null;
 
       updateTableSelection();
-      return;
     }
-
-    currentLane = lane;
-    currentStart = time;
-    intervalsByLane[lane].push({ start: time, end: time });
-    updateTableSelection();
   });
 
   tableBody.addEventListener("dblclick", (e) => {
