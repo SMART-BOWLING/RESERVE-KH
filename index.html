@@ -276,8 +276,12 @@ td.start-time-chosen {
   }
   function highlightColumn(l) {
     clearColumnHighlight();
-    document.querySelectorAll(`td.slot[data-lane="${l}"]`)
-      .forEach(c => c.classList.add('highlight-column'));
+    document.querySelectorAll(`td.slot[data-lane="${l}"]`).forEach(c => {
+  if (!c.classList.contains('start-time-chosen')) {
+    c.classList.add('highlight-column');
+  }
+});
+
   }
 
   function updateTableSelection() {
