@@ -444,9 +444,13 @@
       return;
     }
 
-    const time = e.target.textContent.includes(":30") ?
-      parseFloat(e.target.textContent.replace(":30", ".5")) :
-      parseFloat(e.target.textContent.replace(":00", ".0"));
+    const timeText = e.target.textContent;
+    let time;
+    if (timeText.includes(":30")) {
+      time = parseFloat(timeText.replace(":30", ".5"));
+    } else {
+      time = parseFloat(timeText.replace(":00", ".0"));
+    }
 
     if (currentStart === null) {
       currentStart = time;
@@ -551,7 +555,7 @@
   }
 
   // ЗАМЕНИТЕ URL НИЖЕ НА ВАШ URL ВЕБ- ПРИЛОЖЕНИЯ GAS
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyock2oBOqxHp4-k6KTkrWpQW2yZ_XpfLYr4jcz4XIm4kCd4AtGNYKplacPt6sL6W3V/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzaRdN-icHfazdowJ16eZqpWoTPXzcPe_NK6XnVidNdCcasgrFfUvUwTI0D6Z1mHfpb/exec';
 
   function submitForm() {
     const name = document.getElementById('nameInput').value.trim();
@@ -591,17 +595,22 @@
 
     fetch(GAS_URL, {
       method: 'POST',
+      mode: 'cors',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ bookings })
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) throw new Error('Сетевая ошибка');
+      return response.json();
+    })
     .then(result => {
       if (result.success) {
         alert("Бронирование принято!");
         closeModal();
 
+        // Очистка данных
         for (const lane in intervalsByLane) {
           intervalsByLane[lane] = [];
         }
