@@ -203,7 +203,7 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwSgIppn2BVhwa0O9h6yO0TgRjlD9sg90SjnEn9i0KYXkz_RmtFRVn0sAbfV3oVEB_k/exec"; // ваш Web App URL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyUOQW6q9fC9SCGtPtwcFUiR21Vz4wyUbFfrnno_B7u8g3ITMGSj4ruvekevMI-Z1QY/exec"; // ваш Web App URL
     const startHour = 11, endHour = 22, lanes = 12;
 
     // Элемент date, сегодня по умолчанию
@@ -294,12 +294,12 @@
       }
     }
 
-    // Загрузка уже забронированных слотов
-    async function loadBookedSlots(date) {
+    // Загрузка уже забронированных слотов — обязательно добавляем "?action=get" в URL
+    async function loadBookedSlots() {
       // очистим
       document.querySelectorAll("td.booked").forEach(c => c.classList.remove("booked"));
       intervalsByLane = {};
-      const res = await fetch(`${GAS_URL}?date=${date}`);
+      const res = await fetch(GAS_URL + "?action=get");
       const json = await res.json();
       json.bookings.forEach(b => {
         const lane = b.tableNumber - 1;
@@ -388,7 +388,7 @@
       });
       alert("Бронирование отправлено!");
       closeModal();
-      loadBookedSlots(date);
+      loadBookedSlots();
       document.getElementById("nameInput").value = "";
       document.getElementById("phoneInput").value = "";
       document.getElementById("commentInput").value = "";
@@ -401,8 +401,12 @@
 
     // Инициализация страницы
     updateTableSelection();
-    loadBookedSlots(today);
-    dateInput.addEventListener("change", () => loadBookedSlots(dateInput.value));
+    loadBookedSlots();
+    dateInput.addEventListener("change", () => loadBookedSlots());
+
+    function closeImagePopup() {
+      document.getElementById("imagePopup").style.display="none";
+    }
   </script>
 </body>
 </html>
