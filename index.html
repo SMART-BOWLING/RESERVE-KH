@@ -337,6 +337,8 @@
 </div>
 
 <script>
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbzc03WSQwbSUM_28A2qLF-WHohwQnZLc5vKxnrtrMnEITosDDqPDJTqf5CBk_kaSg0-xw/exec"; // <-- ВАШ URL ЗДЕСЬ
+
   const dateInput = document.getElementById('dateInput');
   const today = new Date().toISOString().split('T')[0];
   dateInput.min = today;
@@ -562,7 +564,7 @@
     document.getElementById('modal').style.display = 'none';
   }
 
-  function submitForm() {
+  async function submitForm() {
     const name = document.getElementById('nameInput').value.trim();
     const phone = document.getElementById('phoneInput').value.trim();
     const comment = document.getElementById('commentInput').value.trim();
@@ -577,22 +579,66 @@
       return;
     }
 
-    closeModal();
-
-    alert("Бронирование принято!");
-
-    for (const lane in intervalsByLane) {
-      intervalsByLane[lane] = [];
+    // Формируем массив бронирований для отправки
+    const bookings = [];
+    for (const laneStr in intervalsByLane) {
+      const lane = parseInt(laneStr);
+      intervalsByLane[lane].forEach(interval => {
+        bookings.push({
+          date,
+          tableNumber: lane + 1,
+          start: interval.start,
+          end: interval.end,
+          name,
+          phone,
+          comment
+        });
+      });
     }
-    currentLane = null;
-    currentStart = null;
-    clearStartTimeHighlight();
-    clearColumnHighlight();
-    updateTableSelection();
 
-    document.getElementById('nameInput').value = '';
-    document.getElementById('phoneInput').value = '';
-    document.getElementById('commentInput').value = '';
+    if (bookings.length === 0) {
+      alert("Нет выбранных интервалов для бронирования.");
+      return;
+    }
+
+    // Отправляем данные на сервер (Google Apps Script)
+    try {
+      const response = await fetch(GAS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ bookings })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ошибка сервера: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert("Бронирование принято!");
+        closeModal();
+
+        // Очистка выбранных интервалов и формы
+        for (const lane in intervalsByLane) {
+          intervalsByLane[lane] = [];
+        }
+        currentLane = null;
+        currentStart = null;
+        clearStartTimeHighlight();
+        clearColumnHighlight();
+        updateTableSelection();
+
+        document.getElementById('nameInput').value = '';
+        document.getElementById('phoneInput').value = '';
+        document.getElementById('commentInput').value = '';
+      } else {
+        alert("Ошибка при сохранении бронирования: " + (result.message || "неизвестная ошибка"));
+      }
+    } catch (error) {
+      alert("Ошибка сети или сервера: " + error.message);
+    }
   }
 
   document.getElementById("openImage").addEventListener("click", () => {
