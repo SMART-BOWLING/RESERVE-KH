@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>БРОНИ БИЛЬЯРД</title>
   <style>
     :root {
@@ -10,16 +10,16 @@
       --main-color: #1a2f40;
     }
 
-@media (max-width: 768px) {
-  :root {
-    --cell-size: calc((100vw - 20px) / 13);
-  }
+    @media (max-width: 768px) {
+      :root {
+        --cell-size: calc((100vw - 20px) / 13);
+      }
 
-  td, th {
-    aspect-ratio: 1;
-    height: auto;
-  }
-}
+      td, th {
+        aspect-ratio: 1;
+        height: auto;
+      }
+    }
 
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -67,6 +67,8 @@
       background: var(--main-color);
       color: white;
       font-weight: bold;
+      cursor: pointer;
+      user-select: none;
     }
 
     td.slot {
@@ -74,7 +76,7 @@
     }
 
     td.selected {
-      background-color: #dc143c !important; /* Красный выбранных ячеек оставил */
+      background-color: #dc143c !important; /* Красный выбранных ячеек */
       border: none !important;
     }
 
@@ -86,6 +88,17 @@
     td.selected.rounded-bottom {
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
+    }
+
+    /* Подсветка всего столбца */
+    td.highlight-column {
+      background-color: #dc143c33 !important; /* полупрозрачный розовый */
+    }
+
+    /* Подсветка выбранного времени "С" */
+    td.start-time-chosen {
+      background-color: #dc143c88 !important; /* более яркий, но полупрозрачный */
+      border: 2px solid #dc143c !important;
     }
 
     #cardsContainer {
@@ -149,7 +162,7 @@
     }
 
     .booking-button:hover {
-      background: #153043; /* чуть темнее */
+      background: #153043;
     }
 
     #modal {
@@ -363,11 +376,33 @@
   let currentLane = null;
   let currentStart = null;
 
+  // Для подсветки выбранного start-time
+  function clearStartTimeHighlight() {
+    document.querySelectorAll('td.start-time-chosen').forEach(cell => {
+      cell.classList.remove('start-time-chosen');
+    });
+  }
+
+  function clearColumnHighlight() {
+    document.querySelectorAll('td.highlight-column').forEach(cell => {
+      cell.classList.remove('highlight-column');
+    });
+  }
+
+  function highlightColumn(lane) {
+    clearColumnHighlight();
+    document.querySelectorAll(`td.slot[data-lane="${lane}"]`).forEach(cell => {
+      cell.classList.add('highlight-column');
+    });
+  }
+
   function updateTableSelection() {
+    // Сброс выделения выбранных интервалов
     document.querySelectorAll("td.selected").forEach(c => {
       c.classList.remove("selected", "rounded-top", "rounded-bottom");
     });
 
+    // Обновление выделения забронированных интервалов
     for (const laneStr in intervalsByLane) {
       const lane = parseInt(laneStr);
       intervalsByLane[lane].forEach(interval => {
@@ -392,44 +427,62 @@
     updateBookingCards();
   }
 
+  // Клик по столбцу - выделяем весь столбец полупрозрачным розовым
   tableBody.addEventListener("click", (e) => {
     if (!e.target.classList.contains("slot")) return;
 
-    const cell = e.target;
-    const lane = parseInt(cell.dataset.lane);
-    const time = parseFloat(cell.dataset.time);
+    const lane = parseInt(e.target.dataset.lane);
 
-    if (currentStart !== null && lane !== currentLane) {
-      alert("Сначала завершите бронирование в текущем столбце.");
-      return;
-    }
+    // Если уже выбран столбец и время начала - игнорируем клики по столбцу
+    if (currentStart !== null) return;
 
-    if (!intervalsByLane[lane]) intervalsByLane[lane] = [];
-
-    if (currentLane === null) {
-      currentLane = lane;
-      currentStart = time;
-      intervalsByLane[lane].push({ start: time, end: time });
-      updateTableSelection();
-      return;
-    }
-
-    if (lane === currentLane) {
-      if (time <= currentStart) {
-        alert("Конец интервала должен быть позже начала.");
-        return;
-      }
-
-      intervalsByLane[lane].pop();
-      intervalsByLane[lane].push({ start: currentStart, end: time });
-
-      currentLane = null;
-      currentStart = null;
-
-      updateTableSelection();
-    }
+    currentLane = lane;
+    clearStartTimeHighlight();
+    highlightColumn(lane);
   });
 
+  // Клик по времени справа - выбираем start/end время интервала
+  tableBody.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("time-right")) return;
+
+    if (currentLane === null) {
+      alert("Сначала выберите столбец.");
+      return;
+    }
+
+    const time = parseFloat(e.target.textContent.includes(":30") ?
+      e.target.textContent.replace(":30", ".5") :
+      e.target.textContent.replace(":00", ".0"));
+
+    // Если время начала не выбрано - выбрать start
+    if (currentStart === null) {
+      currentStart = time;
+
+      // Подсветить ячейку в текущем столбце с выбранным временем
+      clearStartTimeHighlight();
+      const startCell = document.querySelector(`td.slot[data-lane="${currentLane}"][data-time="${currentStart}"]`);
+      if (startCell) startCell.classList.add('start-time-chosen');
+
+      return;
+    }
+
+    // Если время начала уже есть - выбираем end время
+    if (time <= currentStart) {
+      alert("Время конца должно быть больше времени начала.");
+      return;
+    }
+
+    if (!intervalsByLane[currentLane]) intervalsByLane[currentLane] = [];
+    intervalsByLane[currentLane].push({ start: currentStart, end: time });
+
+    currentLane = null;
+    currentStart = null;
+    clearStartTimeHighlight();
+    clearColumnHighlight();
+    updateTableSelection();
+  });
+
+  // Двойной клик - удалить интервал
   tableBody.addEventListener("dblclick", (e) => {
     if (!e.target.classList.contains("slot")) return;
 
@@ -533,6 +586,8 @@
     }
     currentLane = null;
     currentStart = null;
+    clearStartTimeHighlight();
+    clearColumnHighlight();
     updateTableSelection();
 
     document.getElementById('nameInput').value = '';
