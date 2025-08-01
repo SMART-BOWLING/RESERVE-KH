@@ -32,6 +32,7 @@
     thead th {
       position: sticky; top: 0;
       background: var(--main-color); color: white; z-index: 2;
+      transition: background-color 0.2s, color 0.2s;
     }
 
     th, td {
@@ -46,40 +47,48 @@
       font-weight: bold; cursor: pointer;
     }
 
+    /* Подсветка заголовков выбранных столбцов */
+    th.highlight-header {
+      background-color: #dc143c !important;
+      color: white !important;
+    }
+
     td.slot { cursor: pointer; }
-   td.selected {
-  background-color: #dc143c !important;
-  border: none !important;
-  position: relative;
-  z-index: 1;
-}
+    td.selected {
+      background-color: #dc143c !important;
+      border: none !important;
+      position: relative;
+      z-index: 1;
+    }
 
-td.selected.rounded-top {
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  position: relative;
-  z-index: 1;
-}
+    td.selected.rounded-top {
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      position: relative;
+      z-index: 1;
+    }
 
-td.selected.rounded-bottom {
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  position: relative;
-  z-index: 1;
-}
+    td.selected.rounded-bottom {
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      position: relative;
+      z-index: 1;
+    }
 
-td.highlight-column {
-  background-color: #dc143c33 !important;
-  position: relative;
-  z-index: 0;
-}
+    /* Убрана подсветка столбца, чтобы не мешала */
+    td.highlight-column {
+      background-color: transparent !important;
+      position: relative;
+      z-index: 0;
+    }
 
-td.start-time-chosen {
-  background-color: #dc143c88 !important;
-  border: 2px solid #dc143c !important;
-  position: relative;
-  z-index: 2;
-}
+    td.start-time-chosen {
+      background-color: #dc143c88 !important;
+      border: 2px solid #dc143c !important;
+      position: relative;
+      z-index: 2;
+    }
+
     #cardsContainer {
       margin: 20px 0 10px; width: 100%; max-width: 100vw;
       display: flex; flex-wrap: wrap; gap: 10px;
@@ -246,6 +255,7 @@ td.start-time-chosen {
     timeSlots.push({ display: `${h}:00`, key: h });
     timeSlots.push({ display: `${h}:30`, key: h + 0.5 });
   }
+
   timeSlots.forEach(slot => {
     const row = document.createElement("tr");
     for (let lane = 0; lane < lanes; lane++) {
@@ -270,18 +280,16 @@ td.start-time-chosen {
     document.querySelectorAll('td.start-time-chosen')
       .forEach(c => c.classList.remove('start-time-chosen'));
   }
-  function clearColumnHighlight() {
-    document.querySelectorAll('td.highlight-column')
-      .forEach(c => c.classList.remove('highlight-column'));
+  function clearHeaderHighlight() {
+    document.querySelectorAll('thead th.highlight-header')
+      .forEach(th => th.classList.remove('highlight-header'));
   }
-  function highlightColumn(l) {
-    clearColumnHighlight();
-    document.querySelectorAll(`td.slot[data-lane="${l}"]`).forEach(c => {
-  if (!c.classList.contains('start-time-chosen')) {
-    c.classList.add('highlight-column');
-  }
-});
-
+  function highlightHeader(lane) {
+    clearHeaderHighlight();
+    const headerCells = document.querySelectorAll('thead th');
+    if (lane >= 0 && lane < lanes) {
+      headerCells[lane].classList.add('highlight-header');
+    }
   }
 
   function updateTableSelection() {
@@ -342,7 +350,7 @@ td.start-time-chosen {
       if (currentStart===null) {
         currentLane = lane;
         clearStartTimeHighlight();
-        highlightColumn(lane);
+        highlightHeader(lane);
       }
     }
     if (e.target.classList.contains("time-right")) {
@@ -359,7 +367,8 @@ td.start-time-chosen {
         if (!intervalsByLane[currentLane]) intervalsByLane[currentLane]=[];
         intervalsByLane[currentLane].push({ start: currentStart, end: time });
         currentLane = null; currentStart = null;
-        clearStartTimeHighlight(); clearColumnHighlight();
+        clearStartTimeHighlight();
+        clearHeaderHighlight();
         updateTableSelection();
       }
     }
@@ -412,7 +421,7 @@ td.start-time-chosen {
     }
     if (!bookings.length) return alert("Нет выбранных интервалов.");
 
-    // Убрали заголовок, чтобы JSON точно отправился в режиме no-cors
+    // Отправляем бронирования на GAS (no-cors режим)
     bookings.forEach(b => {
       fetch(GAS_URL, {
         method: "POST",
@@ -425,19 +434,22 @@ td.start-time-chosen {
     closeModal();
     for (let l in intervalsByLane) intervalsByLane[l]=[];
     currentLane = currentStart = null;
-    clearStartTimeHighlight(); clearColumnHighlight();
+    clearStartTimeHighlight();
+    clearHeaderHighlight();
     updateTableSelection();
     document.getElementById("nameInput").value="";
     document.getElementById("phoneInput").value="";
     document.getElementById("commentInput").value="";
   }
 
-  document.getElementById("openImage").onclick = () =>
-    document.getElementById("imagePopup").style.display="flex";
-  document.querySelector(".close-popup").onclick = () =>
-    document.getElementById("imagePopup").style.display="none";
+  document.getElementById("openImage").onclick = () => {
+    document.getElementById("imagePopup").style.display = "flex";
+  };
+  function closeImagePopup() {
+    document.getElementById("imagePopup").style.display = "none";
+  }
 
-  updateTableSelection();
 </script>
+
 </body>
 </html>
