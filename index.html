@@ -16,86 +16,107 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f0f2f5;
-      padding: 10px; margin: 0;
+      margin: 0; padding: 10px;
       display: flex; flex-direction: column; align-items: center;
     }
     table {
-      border-collapse: separate; border-spacing: 2px 0;
-      table-layout: fixed; width: 100%; max-width: 100vw;
-      user-select: none; touch-action: manipulation;
+      border-collapse: separate;
+      border-spacing: 2px 0;
+      table-layout: fixed;
+      width: 100%; max-width: 100vw;
       overflow: auto; display: block;
+      user-select: none; touch-action: manipulation;
     }
     thead th {
       position: sticky; top: 0;
-      background: var(--main-color); color: white; z-index: 2;
+      background: var(--main-color); color: white;
+      z-index: 2;
     }
     th, td {
-      width: var(--cell-size); height: var(--cell-size);
-      border: 1px solid #ccc; text-align: center;
-      vertical-align: middle; box-sizing: border-box;
-      background: white; font-size: 12px;
+      width: var(--cell-size);
+      height: var(--cell-size);
+      border: 1px solid #ccc;
+      text-align: center;
+      vertical-align: middle;
+      background: white;
+      font-size: 12px;
+      box-sizing: border-box;
     }
     th.time-col, .time-right {
-      background: var(--main-color); color: white;
-      font-weight: bold; cursor: pointer;
+      background: var(--main-color);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
     td.slot { cursor: pointer; }
     td.selected { background-color: #dc143c !important; border: none !important; }
     td.selected.rounded-top {
-      border-top-left-radius: 8px; border-top-right-radius: 8px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
     }
     td.selected.rounded-bottom {
-      border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
     }
     td.highlight-column { background-color: #dc143c33 !important; }
     td.start-time-chosen {
       background-color: #dc143c88 !important;
       border: 2px solid #dc143c !important;
     }
-    /* Новый класс для уже забронированных слотов */
+    /* Занятые слоты */
     td.booked {
       background-color: #ccc !important;
       cursor: default;
     }
-    td.booked:hover {
-      background-color: #ccc !important;
-    }
+    td.booked:hover { background-color: #ccc !important; }
     #cardsContainer {
-      margin: 20px 0 10px; width: 100%; max-width: 100vw;
+      margin: 20px 0 10px;
+      width: 100%; max-width: 100vw;
       display: flex; flex-wrap: wrap; gap: 10px;
       justify-content: center; padding: 0 10px;
     }
     .booking-card {
-      position: relative; background: white;
-      border: 1px solid var(--main-color); border-radius: 8px;
-      padding: 10px 40px 10px 15px; color: var(--main-color);
-      font-weight: bold; font-size: 14px; white-space: nowrap;
-      user-select: none; box-shadow: 0 2px 5px rgba(26, 47, 64, 0.2);
+      position: relative;
+      background: white;
+      border: 1px solid var(--main-color);
+      border-radius: 8px;
+      padding: 10px 40px 10px 15px;
+      color: var(--main-color);
+      font-weight: bold;
+      font-size: 14px;
+      white-space: nowrap;
+      box-shadow: 0 2px 5px rgba(26,47,64,0.2);
     }
     .booking-card .close-btn {
       position: absolute; top: 0; right: 0;
       transform: translate(50%, -50%);
-      color: var(--main-color); background: white;
-      border: 1px solid var(--main-color); border-radius: 50%;
-      font-weight: bold; font-size: 18px; line-height: 1;
+      background: white;
+      color: var(--main-color);
+      border: 1px solid var(--main-color);
+      border-radius: 50%;
+      font-size: 18px; line-height: 1;
+      padding: 6px 10px;
+      box-shadow: 0 0 5px rgba(26,47,64,0.4);
       cursor: pointer; user-select: none;
-      padding: 6px 10px; box-shadow: 0 0 5px rgba(26,47,64,0.4);
       transition: background-color 0.2s ease;
     }
     .booking-card .close-btn:hover {
-      background-color: var(--main-color); color: white;
+      background: var(--main-color);
+      color: white;
     }
     .booking-button {
       padding: 10px 20px; font-size: 16px;
-      background: var(--main-color); color: white;
-      border: none; border-radius: 5px; cursor: pointer;
+      background: var(--main-color);
+      color: white;
+      border: none; border-radius: 5px;
+      cursor: pointer;
     }
     .booking-button:hover { background: #153043; }
     #modal {
       display: none; position: fixed;
       top:0; left:0; right:0; bottom:0;
-      background: #00000066;
-      justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.4);
+      display: flex; justify-content: center; align-items: center;
       z-index: 1000;
     }
     #modal > div {
@@ -106,11 +127,11 @@
     #modal h3 { margin-top: 0; }
     #modal label { display: block; margin-bottom: 10px; }
     #modal input, #modal textarea {
-      width: 100%; padding: 8px; box-sizing: border-box; margin-top: 4px;
+      width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;
     }
     #modal textarea { resize: vertical; }
     #modal button {
-      padding: 8px 16px; border-radius: 5px; border: none; cursor: pointer;
+      padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;
     }
     #modal button:first-of-type {
       background: var(--main-color); color: white;
@@ -123,26 +144,27 @@
     }
     #dateInput {
       padding: 10px 20px; font-size: 16px;
-      background: white; color: #333;
       border: 2px solid var(--main-color);
-      border-radius: 5px; cursor: pointer;
+      border-radius: 5px; background: white; color: #333;
+      cursor: pointer; appearance: none;
       transition: background 0.2s, color 0.2s;
-      appearance: none;
     }
     #dateInput:hover { background: #f9f9f9; }
     #dateInput::-webkit-calendar-picker-indicator {
-      filter: invert(20%) sepia(70%) saturate(400%) hue-rotate(180deg) brightness(90%) contrast(85%);
+      filter: invert(20%) sepia(70%) saturate(400%) hue-rotate(180deg)
+              brightness(90%) contrast(85%);
       cursor: pointer;
     }
     .image-popup {
       display: none; position: fixed;
       top:0; left:0; right:0; bottom:0;
-      background-color: rgba(0,0,0,0.6);
-      z-index: 10000; justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.6);
+      justify-content: center; align-items: center;
+      z-index: 10000;
     }
     .image-popup .popup-content {
-      position: relative; background: white;
-      padding: 20px; border-radius: 10px;
+      background: white; padding: 20px;
+      border-radius: 10px;
       max-width: 90vw; max-height: 90vh; overflow: auto;
     }
     .image-popup .popup-content img {
@@ -150,10 +172,10 @@
     }
     .image-popup .close-popup {
       position: absolute; top:10px; right:10px;
+      width:30px; height:30px; border:none; border-radius:50%;
       background: var(--main-color); color:white;
-      border:none; border-radius:50%;
-      width:30px; height:30px; font-size:20px;
-      cursor:pointer; box-shadow:0 0 5px rgba(0,0,0,0.3);
+      font-size:20px; cursor:pointer;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
     }
   </style>
 </head>
@@ -165,10 +187,7 @@
         <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
         <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
         <th class="time-col">
-          <button id="openImage" style="padding:5px 10px; border:1px solid var(--main-color);
-            background:var(--main-color); color:white; border-radius:5px; cursor:pointer;">
-            СТОЛЫ
-          </button>
+          <button id="openImage">СТОЛЫ</button>
         </th>
       </tr>
     </thead>
@@ -188,7 +207,7 @@
       <label>Имя:<br><input id="nameInput" autocomplete="off"></label>
       <label>Телефон:<br><input id="phoneInput" autocomplete="off"></label>
       <label>Комментарий:<br><textarea id="commentInput"></textarea></label>
-      <div style="text-align: right;">
+      <div style="text-align:right;">
         <button onclick="submitForm()">Ок</button>
         <button onclick="closeModal()">Отмена</button>
       </div>
@@ -203,21 +222,19 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzMXBTB_jURJD470z8mALexXUOnoWDUAUXkj9DBTBTlQj8RzNq-cESjGaD3ZU81rkNh/exec"; // ваш Web App URL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzO84AfzO9W7be81ykpjpr9txk7im6BUoEARpr2-7cfUvnNP56cOn2nN-S7ll9JMs4t/exec"; // ваш Web App URL
     const startHour = 11, endHour = 22, lanes = 12;
 
-    // Элемент date, сегодня по умолчанию
     const dateInput = document.getElementById('dateInput');
     const today = new Date().toISOString().split('T')[0];
-    dateInput.min = today;
-    dateInput.value = today;
+    dateInput.min = today; dateInput.value = today;
 
-    // Построение таблицы
     const tableBody = document.getElementById("tableBody");
     const cardsContainer = document.getElementById("cardsContainer");
     let intervalsByLane = {};
     let currentLane = null, currentStart = null;
 
+    // Построение временных слотов
     const timeSlots = [];
     for (let h = startHour; h < endHour; h++) {
       timeSlots.push({ display: `${h}:00`, key: h });
@@ -249,14 +266,15 @@
       clearColumnHighlight();
       document.querySelectorAll(`td.slot[data-lane="${l}"]`).forEach(c => c.classList.add('highlight-column'));
     }
+
     function updateTableSelection() {
       document.querySelectorAll("td.selected").forEach(c =>
         c.classList.remove("selected","rounded-top","rounded-bottom"));
       for (let laneStr in intervalsByLane) {
         const lane = +laneStr;
-        intervalsByLane[lane].forEach(interval => {
-          const start = Math.min(interval.start, interval.end),
-                end = Math.max(interval.start, interval.end);
+        intervalsByLane[lane].forEach(iv => {
+          const start = Math.min(iv.start, iv.end),
+                end   = Math.max(iv.start, iv.end);
           document.querySelectorAll(`td.slot[data-lane="${lane}"]`).forEach(cell => {
             const t = parseFloat(cell.dataset.time);
             if (t >= start && t <= end) cell.classList.add("selected");
@@ -269,9 +287,7 @@
       }
       // Карточки
       cardsContainer.innerHTML = "";
-      function fmt(v) {
-        return `${Math.floor(v)}:${v%1===0.5?"30":"00"}`;
-      }
+      function fmt(v) { return `${Math.floor(v)}:${v%1===0.5?"30":"00"}`; }
       const selDate = dateInput.value.split("-").reverse().join(".");
       for (let laneStr in intervalsByLane) {
         const lane = +laneStr;
@@ -294,26 +310,23 @@
       }
     }
 
-    // Загрузка уже забронированных слотов
+    // Загрузка занятых слотов из таблицы
     async function loadBookedSlots(date) {
-      // очистим
       document.querySelectorAll("td.booked").forEach(c => c.classList.remove("booked"));
       intervalsByLane = {};
+      updateTableSelection();
       const res = await fetch(`${GAS_URL}?date=${date}`);
       const json = await res.json();
       json.bookings.forEach(b => {
         const lane = b.tableNumber - 1;
-        if (!intervalsByLane[lane]) intervalsByLane[lane] = [];
-        intervalsByLane[lane].push({ start: b.start, end: b.end });
         for (let t = b.start; t < b.end; t += 0.5) {
           const cell = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${t}"]`);
           if (cell) cell.classList.add("booked");
         }
       });
-      updateTableSelection();
     }
 
-    // События выбора
+    // Обработчики кликов
     tableBody.addEventListener("click", e => {
       if (e.target.classList.contains("slot") && !e.target.classList.contains("booked")) {
         const lane = +e.target.dataset.lane;
@@ -334,7 +347,7 @@
           if (sc) sc.classList.add("start-time-chosen");
         } else {
           if (time <= currentStart) return alert("Время конца должно быть больше времени начала.");
-          if (!intervalsByLane[currentLane]) intervalsByLane[currentLane] = [];
+          if (!intervalsByLane[currentLane]) intervalsByLane[currentLane]=[];
           intervalsByLane[currentLane].push({ start: currentStart, end: time });
           currentLane = null; currentStart = null;
           clearStartTimeHighlight(); clearColumnHighlight();
@@ -349,9 +362,9 @@
       if (!intervalsByLane[lane]) return;
       const idx = intervalsByLane[lane].findIndex(iv => {
         const s = Math.min(iv.start, iv.end), t = Math.max(iv.start, iv.end);
-        return time >= s && time <= t;
+        return time>=s && time<=t;
       });
-      if (idx !== -1) {
+      if (idx!==-1) {
         intervalsByLane[lane].splice(idx,1);
         updateTableSelection();
       }
@@ -362,7 +375,7 @@
     async function submitForm() {
       const name = document.getElementById("nameInput").value.trim(),
             phone= document.getElementById("phoneInput").value.trim(),
-            comment = document.getElementById("commentInput").value.trim(),
+            comment= document.getElementById("commentInput").value.trim(),
             date = dateInput.value;
       if (!name||!phone) return alert("Введите имя и телефон.");
       if (!date) return alert("Выберите дату.");
@@ -389,9 +402,9 @@
       alert("Бронирование отправлено!");
       closeModal();
       loadBookedSlots(date);
-      document.getElementById("nameInput").value = "";
-      document.getElementById("phoneInput").value = "";
-      document.getElementById("commentInput").value = "";
+      document.getElementById("nameInput").value="";
+      document.getElementById("phoneInput").value="";
+      document.getElementById("commentInput").value="";
     }
 
     document.getElementById("openImage").onclick = () =>
@@ -399,7 +412,7 @@
     document.querySelector(".close-popup").onclick = () =>
       document.getElementById("imagePopup").style.display="none";
 
-    // Инициализация страницы
+    // Инициализация
     updateTableSelection();
     loadBookedSlots(today);
     dateInput.addEventListener("change", () => loadBookedSlots(dateInput.value));
