@@ -337,8 +337,6 @@
 </div>
 
 <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxNNfN_Rtaq5I7KZFaLl8jkP3QhWis0l-L4q73ILepewWVzOtRM-J0_F5h1W64NO0s0/exec"; // <-- ВАШ URL ЗДЕСЬ
-
   const dateInput = document.getElementById('dateInput');
   const today = new Date().toISOString().split('T')[0];
   dateInput.min = today;
@@ -378,7 +376,6 @@
   let currentLane = null;
   let currentStart = null;
 
-  // Для подсветки выбранного start-time
   function clearStartTimeHighlight() {
     document.querySelectorAll('td.start-time-chosen').forEach(cell => {
       cell.classList.remove('start-time-chosen');
@@ -399,12 +396,10 @@
   }
 
   function updateTableSelection() {
-    // Сброс выделения выбранных интервалов
     document.querySelectorAll("td.selected").forEach(c => {
       c.classList.remove("selected", "rounded-top", "rounded-bottom");
     });
 
-    // Обновление выделения забронированных интервалов
     for (const laneStr in intervalsByLane) {
       const lane = parseInt(laneStr);
       intervalsByLane[lane].forEach(interval => {
@@ -429,13 +424,11 @@
     updateBookingCards();
   }
 
-  // Клик по столбцу - выделяем весь столбец полупрозрачным розовым
   tableBody.addEventListener("click", (e) => {
     if (!e.target.classList.contains("slot")) return;
 
     const lane = parseInt(e.target.dataset.lane);
 
-    // Если уже выбран столбец и время начала - игнорируем клики по столбцу
     if (currentStart !== null) return;
 
     currentLane = lane;
@@ -443,7 +436,6 @@
     highlightColumn(lane);
   });
 
-  // Клик по времени справа - выбираем start/end время интервала
   tableBody.addEventListener("click", (e) => {
     if (!e.target.classList.contains("time-right")) return;
 
@@ -452,23 +444,18 @@
       return;
     }
 
-    const time = parseFloat(e.target.textContent.includes(":30") ?
-      e.target.textContent.replace(":30", ".5") :
-      e.target.textContent.replace(":00", ".0"));
+    const time = e.target.textContent.includes(":30") ?
+      parseFloat(e.target.textContent.replace(":30", ".5")) :
+      parseFloat(e.target.textContent.replace(":00", ".0"));
 
-    // Если время начала не выбрано - выбрать start
     if (currentStart === null) {
       currentStart = time;
-
-      // Подсветить ячейку в текущем столбце с выбранным временем
       clearStartTimeHighlight();
       const startCell = document.querySelector(`td.slot[data-lane="${currentLane}"][data-time="${currentStart}"]`);
       if (startCell) startCell.classList.add('start-time-chosen');
-
       return;
     }
 
-    // Если время начала уже есть - выбираем end время
     if (time <= currentStart) {
       alert("Время конца должно быть больше времени начала.");
       return;
@@ -484,7 +471,6 @@
     updateTableSelection();
   });
 
-  // Двойной клик - удалить интервал
   tableBody.addEventListener("dblclick", (e) => {
     if (!e.target.classList.contains("slot")) return;
 
@@ -564,7 +550,10 @@
     document.getElementById('modal').style.display = 'none';
   }
 
-  async function submitForm() {
+  // ЗАМЕНИТЕ URL НИЖЕ НА ВАШ URL ВЕБ- ПРИЛОЖЕНИЯ GAS
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbx5S79rntnz5iIzR4BZCrEvJ6eXqO-CQ7jrOhwVegkRYJQQyjdkQALaSWwiZ26ToG-23A/exec';
+
+  function submitForm() {
     const name = document.getElementById('nameInput').value.trim();
     const phone = document.getElementById('phoneInput').value.trim();
     const comment = document.getElementById('commentInput').value.trim();
@@ -579,7 +568,6 @@
       return;
     }
 
-    // Формируем массив бронирований для отправки
     const bookings = [];
     for (const laneStr in intervalsByLane) {
       const lane = parseInt(laneStr);
@@ -601,26 +589,19 @@
       return;
     }
 
-    // Отправляем данные на сервер (Google Apps Script)
-    try {
-      const response = await fetch(GAS_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ bookings })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Ошибка сервера: ${response.status}`);
-      }
-
-      const result = await response.json();
+    fetch(GAS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ bookings })
+    })
+    .then(response => response.json())
+    .then(result => {
       if (result.success) {
         alert("Бронирование принято!");
         closeModal();
 
-        // Очистка выбранных интервалов и формы
         for (const lane in intervalsByLane) {
           intervalsByLane[lane] = [];
         }
@@ -636,11 +617,13 @@
       } else {
         alert("Ошибка при сохранении бронирования: " + (result.message || "неизвестная ошибка"));
       }
-    } catch (error) {
-      alert("Ошибка сети или сервера: " + error.message);
-    }
+    })
+    .catch(err => {
+      alert("Ошибка сервера: " + err.message);
+    });
   }
 
+  // Кнопка для показа картинки с планом столов
   document.getElementById("openImage").addEventListener("click", () => {
     document.getElementById("imagePopup").style.display = "flex";
   });
@@ -649,7 +632,10 @@
     document.getElementById("imagePopup").style.display = "none";
   }
 
-  updateTableSelection();
+  // Закрыть popup при клике вне содержимого
+  document.getElementById("imagePopup").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeImagePopup();
+  });
 </script>
 
 </body>
