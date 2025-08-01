@@ -47,20 +47,39 @@
     }
 
     td.slot { cursor: pointer; }
-    td.selected { background-color: #dc143c !important; border: none !important; }
-    td.selected.rounded-top {
-      border-top-left-radius: 8px; border-top-right-radius: 8px;
-    }
-    td.selected.rounded-bottom {
-      border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
-    }
+   td.selected {
+  background-color: #dc143c !important;
+  border: none !important;
+  position: relative;
+  z-index: 1;
+}
 
-    td.highlight-column { background-color: #dc143c33 !important; }
-    td.start-time-chosen {
-      background-color: #dc143c88 !important;
-      border: 2px solid #dc143c !important;
-    }
+td.selected.rounded-top {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
 
+td.selected.rounded-bottom {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+td.highlight-column {
+  background-color: #dc143c33 !important;
+  position: relative;
+  z-index: 0;
+}
+
+td.start-time-chosen {
+  background-color: #dc143c88 !important;
+  border: 2px solid #dc143c !important;
+  position: relative;
+  z-index: 2;
+}
     #cardsContainer {
       margin: 20px 0 10px; width: 100%; max-width: 100vw;
       display: flex; flex-wrap: wrap; gap: 10px;
