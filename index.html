@@ -31,7 +31,6 @@
       border-collapse: separate;
       border-spacing: 2px 0;
       table-layout: fixed;
-      width: 100%;
       max-width: 100vw;
       user-select: none;
       touch-action: manipulation;
@@ -303,7 +302,7 @@
 </head>
 <body>
 
-  <div style="position: relative; width: 100%; max-width: 100vw;">
+  <div style="position: relative; width: 100%; max-width: 100vw; display: flex; justify-content: center">
     <table id="bookingTable">
       <thead>
         <tr>
@@ -574,8 +573,6 @@
 
       // Рассчитаем размеры и позицию таблицы
       const rect = bookingTable.getBoundingClientRect();
-      const cellWidth = 50;
-      const cellHeight = 50;
       
       data.bookings.forEach(b => {
         if (b.date === dateInput.value){
@@ -583,7 +580,13 @@
           // b.tableNumber: 1..12, b.start, b.end: числа с 0.5 шагом (например 11, 11.5, 12 и т.п)
           const laneIndex = b.table - 1;
           const start = b.start+0.5;
-        const end = b.end+0.5;
+          const end = b.end+0.5;
+          const cell = document.querySelector(`#tableBody > tr:nth-child(${start*2-22}) > td:nth-child(${laneIndex+1})`).getBoundingClientRect();
+          const cellHeight = cell.height; 
+          const cellWidth = cell.width; 
+          const x_offset = cell.left-10;
+          const y_offset = cell.top-10;
+          
         // Позиционирование по таблице
         const topIndex = timeSlots.findIndex(ts => ts.key === start);
         const bottomIndex = timeSlots.findIndex(ts => ts.key === end);
@@ -594,9 +597,9 @@
         // Создаем ползунок
         const slider = document.createElement("div");
         slider.className = "existing-slider";
-        slider.style.top = (topIndex * cellHeight) + "px";
+        slider.style.top = (y_offset) + "px";
         slider.style.height = ((bottomIndex - topIndex + 1) * cellHeight) + "px"; // -4 для отступа
-        slider.style.left = (laneIndex * (cellWidth + 2.2)) + "px"; // +2 для отступа
+        slider.style.left = x_offset + "px"; // +2 для отступа
         slider.style.width = cellWidth + "px";
         slider.title = `Стол №${b.table}\n${b.date}\nс ${formatTime(start)} по ${formatTime(end)}\n${b.name} ${b.phone}`;
         slider.textContent = b.name;
