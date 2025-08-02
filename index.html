@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -37,6 +37,7 @@
       touch-action: manipulation;
       overflow: auto;
       display: block;
+      position: relative;
     }
 
     thead th {
@@ -273,25 +274,53 @@
       cursor: pointer;
       box-shadow: 0 0 5px rgba(0,0,0,0.3);
     }
+
+    /* Новый слой для ползунков существующих броней */
+    #slidersContainer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .existing-slider {
+      position: absolute;
+      background: var(--highlight-bg);
+      border: 1.5px solid var(--highlight-color);
+      border-radius: 6px;
+      pointer-events: auto;
+      box-sizing: border-box;
+      cursor: default;
+      font-size: 10px;
+      color: var(--main-color);
+      font-weight: bold;
+      padding: 2px 4px;
+      user-select: none;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
   </style>
 </head>
 <body>
 
-  <table id="bookingTable">
-    <thead>
-      <tr>
-        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
-        <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
-        <th class="time-col">
-          <button id="openImage" style="padding:5px 10px; border:1px solid var(--main-color);
-            background:var(--main-color); color:white; border-radius:5px; cursor:pointer;">
-            СТОЛЫ
-          </button>
-        </th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <div style="position: relative; width: 100%; max-width: 100vw;">
+    <table id="bookingTable">
+      <thead>
+        <tr>
+          <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+          <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+          <th class="time-col">
+            <button id="openImage" style="padding:5px 10px; border:1px solid var(--main-color);
+              background:var(--main-color); color:white; border-radius:5px; cursor:pointer;">
+              СТОЛЫ
+            </button>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="slidersContainer"></div>
+  </div>
 
   <div id="cardsContainer"></div>
 
@@ -320,232 +349,297 @@
     </div>
   </div>
 
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxGNf2Vh2Ozp_Z-VyY-fks8twhe09HjGa9GgYACyNCwfFy09DB8Y5d9P9PbwvfXpl6l/exec";
+<script>
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbzsppWhfu0rmPYBZSnKGawVkiOYzfSc2q-AB9jIfi2h6Yv4bywDS9jQI0Kyk-WB1p-K/exec";
 
-    // Инициализация календаря
-    const dateInput = document.getElementById('dateInput');
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.min = today;
-    dateInput.value = today;
+  // Инициализация календаря
+  const dateInput = document.getElementById('dateInput');
+  const today = new Date().toISOString().split('T')[0];
+  dateInput.min = today;
+  dateInput.value = today;
 
-    // Построение таблицы
-    const startHour = 11, endHour = 22, lanes = 12;
-    const tableBody = document.getElementById("tableBody"),
-          cardsContainer = document.getElementById("cardsContainer");
+  const startHour = 11, endHour = 22, lanes = 12;
+  const tableBody = document.getElementById("tableBody"),
+        cardsContainer = document.getElementById("cardsContainer"),
+        slidersContainer = document.getElementById("slidersContainer"),
+        bookingTable = document.getElementById("bookingTable");
 
-    const timeSlots = [];
-    for (let h = startHour; h < endHour; h++) {
-      timeSlots.push({ display: `${h}:00`, key: h });
-      timeSlots.push({ display: `${h}:30`, key: h + 0.5 });
+  const timeSlots = [];
+  for (let h = startHour; h < endHour; h++) {
+    timeSlots.push({ display: `${h}:00`, key: h });
+    timeSlots.push({ display: `${h}:30`, key: h + 0.5 });
+  }
+
+  timeSlots.forEach(slot => {
+    const row = document.createElement("tr");
+    for (let lane = 0; lane < lanes; lane++) {
+      const cell = document.createElement("td");
+      cell.className = "slot";
+      cell.dataset.lane = lane;
+      cell.dataset.time = slot.key;
+      cell.dataset.display = slot.display;
+      row.appendChild(cell);
     }
+    const timeCell = document.createElement("th");
+    timeCell.className = "time-right";
+    timeCell.textContent = slot.display;
+    row.appendChild(timeCell);
+    tableBody.appendChild(row);
+  });
 
-    timeSlots.forEach(slot => {
-      const row = document.createElement("tr");
-      for (let lane = 0; lane < lanes; lane++) {
-        const cell = document.createElement("td");
-        cell.className = "slot";
-        cell.dataset.lane = lane;
-        cell.dataset.time = slot.key;
-        cell.dataset.display = slot.display;
-        row.appendChild(cell);
-      }
-      const timeCell = document.createElement("th");
-      timeCell.className = "time-right";
-      timeCell.textContent = slot.display;
-      row.appendChild(timeCell);
-      tableBody.appendChild(row);
-    });
+  const intervalsByLane = {};
+  let currentLane = null, currentStart = null;
 
-    const intervalsByLane = {};
-    let currentLane = null, currentStart = null;
+  // --- Работа с визуалом выбора интервалов (твоя логика) ---
+  function clearStartTimeHighlight() {
+    document.querySelectorAll('td.start-time-chosen').forEach(c => c.classList.remove('start-time-chosen'));
+  }
+  function clearHeaderHighlight() {
+    document.querySelectorAll('thead th.highlight-header').forEach(th => th.classList.remove('highlight-header'));
+  }
+  function clearVerticalLines() {
+    document.querySelectorAll('td.vertical-line').forEach(td => td.classList.remove('vertical-line'));
+  }
+  function highlightHeader(lane) {
+    clearHeaderHighlight();
+    const headerCells = document.querySelectorAll('thead th');
+    if (lane >= 0 && lane < lanes) headerCells[lane].classList.add('highlight-header');
+  }
+  function highlightColumn(lane) {
+    clearVerticalLines();
+    document.querySelectorAll(`td.slot[data-lane="${lane}"]`).forEach(td => td.classList.add('vertical-line'));
+  }
+  function updateTableSelection() {
+    // Сброс выделений
+    document.querySelectorAll("td.selected").forEach(c => c.classList.remove("selected","rounded-top","rounded-bottom"));
 
-    function clearStartTimeHighlight() {
-      document.querySelectorAll('td.start-time-chosen')
-        .forEach(c => c.classList.remove('start-time-chosen'));
-    }
-    function clearHeaderHighlight() {
-      document.querySelectorAll('thead th.highlight-header')
-        .forEach(th => th.classList.remove('highlight-header'));
-    }
-    function clearVerticalLines() {
-      document.querySelectorAll('td.vertical-line')
-        .forEach(td => td.classList.remove('vertical-line'));
-    }
-
-    function highlightHeader(lane) {
-      clearHeaderHighlight();
-      const headerCells = document.querySelectorAll('thead th');
-      if (lane >= 0 && lane < lanes) {
-        headerCells[lane].classList.add('highlight-header');
-      }
-    }
-
-    function highlightColumn(lane) {
-      clearVerticalLines();
-      document.querySelectorAll(`td.slot[data-lane="${lane}"]`)
-        .forEach(td => td.classList.add('vertical-line'));
-    }
-
-    function updateTableSelection() {
-      // Сброс выделений
-      document.querySelectorAll("td.selected")
-        .forEach(c => c.classList.remove("selected","rounded-top","rounded-bottom"));
-
-      for (let laneStr in intervalsByLane) {
-        const lane = +laneStr;
-        intervalsByLane[lane].forEach(interval => {
-          const start = Math.min(interval.start, interval.end),
-                end = Math.max(interval.start, interval.end);
-          document.querySelectorAll(`td.slot[data-lane="${lane}"]`)
-            .forEach(cell => {
-              const t = parseFloat(cell.dataset.time);
-              if (t >= start && t <= end) cell.classList.add("selected");
-            });
-          const sc = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${start}"]`);
-          const ec = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${end}"]`);
-          if (sc) sc.classList.add("rounded-top");
-          if (ec && end !== start) ec.classList.add("rounded-bottom");
+    for (let laneStr in intervalsByLane) {
+      const lane = +laneStr;
+      intervalsByLane[lane].forEach(interval => {
+        const start = Math.min(interval.start, interval.end),
+              end = Math.max(interval.start, interval.end);
+        document.querySelectorAll(`td.slot[data-lane="${lane}"]`).forEach(cell => {
+          const t = parseFloat(cell.dataset.time);
+          if (t >= start && t <= end) cell.classList.add("selected");
         });
-      }
-
-      // Рендер карточек
-      cardsContainer.innerHTML = "";
-      function fmt(v) {
-        const h = Math.floor(v), m = v % 1 === 0.5 ? "30" : "00";
-        return `${h}:${m}`;
-      }
-      const selDate = dateInput.value.split("-").reverse().join(".");
-      for (let laneStr in intervalsByLane) {
-        const lane = +laneStr;
-        intervalsByLane[lane].forEach((interval, idx) => {
-          const s = Math.min(interval.start, interval.end),
-                e = Math.max(interval.start, interval.end);
-          const card = document.createElement("div");
-          card.className = "booking-card";
-          card.textContent = `Стол № ${lane+1} | ${selDate} | с ${fmt(s)} по ${fmt(e)}`;
-          const btn = document.createElement("button");
-          btn.className = "close-btn";
-          btn.innerHTML = "&times;";
-          btn.onclick = ev => {
-            ev.stopPropagation();
-            intervalsByLane[lane].splice(idx,1);
-            updateTableSelection();
-          };
-          card.appendChild(btn);
-          cardsContainer.appendChild(card);
-        });
-      }
-    }
-
-    tableBody.addEventListener("click", e => {
-      if (e.target.classList.contains("slot")) {
-        const lane = +e.target.dataset.lane;
-        if (currentStart === null) {
-          currentLane = lane;
-          clearStartTimeHighlight();
-          highlightHeader(lane);
-          highlightColumn(lane);
-        }
-      }
-      if (e.target.classList.contains("time-right")) {
-        if (currentLane === null) return alert("Сначала выберите столбец.");
-        const txt = e.target.textContent;
-        const time = parseFloat(txt.includes(":30") ? txt.replace(":30",".5") : txt.replace(":00",".0"));
-        if (currentStart === null) {
-          currentStart = time;
-          clearStartTimeHighlight();
-          const sc = document.querySelector(`td.slot[data-lane="${currentLane}"][data-time="${currentStart}"]`);
-          if (sc) sc.classList.add("start-time-chosen");
-        } else {
-          if (time <= currentStart) return alert("Время конца должно быть больше времени начала.");
-          if (!intervalsByLane[currentLane]) intervalsByLane[currentLane] = [];
-          intervalsByLane[currentLane].push({ start: currentStart, end: time });
-          currentLane = null;
-          currentStart = null;
-          clearStartTimeHighlight();
-          clearHeaderHighlight();
-          clearVerticalLines();
-          updateTableSelection();
-        }
-      }
-    });
-
-    tableBody.addEventListener("dblclick", e => {
-      if (!e.target.classList.contains("slot")) return;
-      const lane = +e.target.dataset.lane;
-      const time = parseFloat(e.target.dataset.time);
-      if (!intervalsByLane[lane]) return;
-      const idx = intervalsByLane[lane].findIndex(iv => {
-        const s = Math.min(iv.start, iv.end), t = Math.max(iv.start, iv.end);
-        return time >= s && time <= t;
+        const sc = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${start}"]`);
+        const ec = document.querySelector(`td.slot[data-lane="${lane}"][data-time="${end}"]`);
+        if (sc) sc.classList.add("rounded-top");
+        if (ec && end !== start) ec.classList.add("rounded-bottom");
       });
-      if (idx !== -1) {
-        intervalsByLane[lane].splice(idx, 1);
+    }
+
+    // Рендер карточек выбранных интервалов
+    cardsContainer.innerHTML = "";
+    function fmt(v) {
+      const h = Math.floor(v), m = v % 1 === 0.5 ? "30" : "00";
+      return `${h}:${m}`;
+    }
+    const selDate = dateInput.value.split("-").reverse().join(".");
+    for (let laneStr in intervalsByLane) {
+      const lane = +laneStr;
+      intervalsByLane[lane].forEach((interval, idx) => {
+        const s = Math.min(interval.start, interval.end),
+              e = Math.max(interval.start, interval.end);
+        const card = document.createElement("div");
+        card.className = "booking-card";
+        card.textContent = `Стол № ${lane+1} | ${selDate} | с ${fmt(s)} по ${fmt(e)}`;
+        const btn = document.createElement("button");
+        btn.className = "close-btn";
+        btn.innerHTML = "&times;";
+        btn.onclick = ev => {
+          ev.stopPropagation();
+          intervalsByLane[lane].splice(idx,1);
+          updateTableSelection();
+        };
+        card.appendChild(btn);
+        cardsContainer.appendChild(card);
+      });
+    }
+  }
+
+  // Обработка клика по ячейкам таблицы
+  tableBody.addEventListener("click", e => {
+    if (e.target.classList.contains("slot")) {
+      const lane = +e.target.dataset.lane;
+      if (currentStart === null) {
+        currentLane = lane;
+        clearStartTimeHighlight();
+        highlightHeader(lane);
+        highlightColumn(lane);
+      }
+    }
+    if (e.target.classList.contains("time-right")) {
+      if (currentLane === null) return alert("Сначала выберите столбец.");
+      const txt = e.target.textContent;
+      const time = parseFloat(txt.includes(":30") ? txt.replace(":30",".5") : txt.replace(":00",".0"));
+      if (currentStart === null) {
+        currentStart = time;
+        clearStartTimeHighlight();
+        const sc = document.querySelector(`td.slot[data-lane="${currentLane}"][data-time="${currentStart}"]`);
+        if (sc) sc.classList.add("start-time-chosen");
+      } else {
+        if (time <= currentStart) return alert("Время конца должно быть больше времени начала.");
+        if (!intervalsByLane[currentLane]) intervalsByLane[currentLane] = [];
+        intervalsByLane[currentLane].push({ start: currentStart, end: time });
+        currentLane = null;
+        currentStart = null;
+        clearStartTimeHighlight();
+        clearHeaderHighlight();
+        clearVerticalLines();
         updateTableSelection();
       }
+    }
+  });
+
+  // Удаление интервала по двойному клику
+  tableBody.addEventListener("dblclick", e => {
+    if (!e.target.classList.contains("slot")) return;
+    const lane = +e.target.dataset.lane;
+    const time = parseFloat(e.target.dataset.time);
+    if (!intervalsByLane[lane]) return;
+    const idx = intervalsByLane[lane].findIndex(iv => {
+      const s = Math.min(iv.start, iv.end), t = Math.max(iv.start, iv.end);
+      return time >= s && time <= t;
     });
-
-    function openModal() {
-      if (!Object.values(intervalsByLane).some(a => a.length)) {
-        return alert("Сначала выберите время.");
-      }
-      document.getElementById("modal").style.display = "flex";
+    if (idx !== -1) {
+      intervalsByLane[lane].splice(idx, 1);
+      updateTableSelection();
     }
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
+  });
+
+  // Модалка брони
+  function openModal() {
+    if (!Object.values(intervalsByLane).some(a => a.length)) {
+      return alert("Сначала выберите время.");
     }
+    document.getElementById("modal").style.display = "flex";
+  }
+  function closeModal() {
+    document.getElementById("modal").style.display = "none";
+  }
 
-    async function submitForm() {
-      const name = document.getElementById("nameInput").value.trim();
-      const phone = document.getElementById("phoneInput").value.trim();
-      const comment = document.getElementById("commentInput").value.trim();
-      const date = dateInput.value;
-      if (!name || !phone) return alert("Введите имя и телефон.");
-      if (!date) return alert("Выберите дату.");
+  // Отправка брони на сервер
+  async function submitForm() {
+    const name = document.getElementById("nameInput").value.trim();
+    const phone = document.getElementById("phoneInput").value.trim();
+    const comment = document.getElementById("commentInput").value.trim();
+    const date = dateInput.value;
+    if (!name || !phone) return alert("Введите имя и телефон.");
+    if (!date) return alert("Выберите дату.");
 
-      const bookings = [];
-      for (let lane in intervalsByLane) {
-        intervalsByLane[lane].forEach(iv => {
-          bookings.push({
-            date,
-            tableNumber: +lane + 1,
-            start: iv.start,
-            end: iv.end,
-            name, phone, comment
-          });
-        });
-      }
-      if (!bookings.length) return alert("Нет выбранных интервалов.");
-
-      bookings.forEach(b => {
-        fetch(GAS_URL, {
-          method: "POST",
-          mode: "no-cors",
-          body: JSON.stringify({ bookings: [b] })
+    const bookings = [];
+    for (let lane in intervalsByLane) {
+      intervalsByLane[lane].forEach(iv => {
+        bookings.push({
+          date,
+          tableNumber: +lane + 1,
+          start: iv.start,
+          end: iv.end,
+          name, phone, comment
         });
       });
-
-      alert("Бронирование отправлено!");
-      closeModal();
-      for (let l in intervalsByLane) intervalsByLane[l] = [];
-      currentLane = currentStart = null;
-      clearStartTimeHighlight();
-      clearHeaderHighlight();
-      clearVerticalLines();
-      updateTableSelection();
-      document.getElementById("nameInput").value = "";
-      document.getElementById("phoneInput").value = "";
-      document.getElementById("commentInput").value = "";
     }
+    if (!bookings.length) return alert("Нет выбранных интервалов.");
 
-    document.getElementById("openImage").onclick = () => {
-      document.getElementById("imagePopup").style.display = "flex";
-    };
-    function closeImagePopup() {
-      document.getElementById("imagePopup").style.display = "none";
+    bookings.forEach(b => {
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ bookings: [b] })
+      });
+    });
+
+    alert("Бронирование отправлено!");
+    closeModal();
+    for (let l in intervalsByLane) intervalsByLane[l] = [];
+    currentLane = currentStart = null;
+    clearStartTimeHighlight();
+    clearHeaderHighlight();
+    clearVerticalLines();
+    updateTableSelection();
+    document.getElementById("nameInput").value = "";
+    document.getElementById("phoneInput").value = "";
+    document.getElementById("commentInput").value = "";
+    loadExisting(); // обновим бронь после отправки
+  }
+
+  // Загрузка существующих броней с сервера
+  async function loadExisting() {
+    slidersContainer.innerHTML = "";
+    try {
+      const res = await fetch(GAS_URL + "?action=get&date=" + dateInput.value);
+      const data = await res.json();
+      if (!data.bookings || !data.bookings.length) return;
+
+      // Рассчитаем размеры и позицию таблицы
+      const rect = bookingTable.getBoundingClientRect();
+      const cellWidth = 50;
+      const cellHeight = 50;
+      
+      data.bookings.forEach(b => {
+        if (b.date === dateInput.value){
+          
+          // b.tableNumber: 1..12, b.start, b.end: числа с 0.5 шагом (например 11, 11.5, 12 и т.п)
+          const laneIndex = b.table - 1;
+          const start = b.start+0.5;
+        const end = b.end+0.5;
+        // Позиционирование по таблице
+        const topIndex = timeSlots.findIndex(ts => ts.key === start);
+        const bottomIndex = timeSlots.findIndex(ts => ts.key === end);
+        
+        // Если время не найдено (например если данные некорректны), пропускаем
+        if (topIndex === -1 || bottomIndex === -1) return;
+        
+        // Создаем ползунок
+        const slider = document.createElement("div");
+        slider.className = "existing-slider";
+        slider.style.top = (topIndex * cellHeight) + "px";
+        slider.style.height = ((bottomIndex - topIndex + 1) * cellHeight) + "px"; // -4 для отступа
+        slider.style.left = (laneIndex * (cellWidth + 2.2)) + "px"; // +2 для отступа
+        slider.style.width = cellWidth + "px";
+        slider.title = `Стол №${b.table}\n${b.date}\nс ${formatTime(start)} по ${formatTime(end)}\n${b.name} ${b.phone}`;
+        slider.textContent = b.name;
+        
+        slidersContainer.appendChild(slider);
+        }
+      });
+    } catch(e) {
+      console.error("Ошибка загрузки бронирований:", e);
     }
-  </script>
+  }
+
+  function formatTime(v) {
+    const h = Math.floor(v);
+    const m = v % 1 === 0.5 ? "30" : "00";
+    return `${h}:${m}`;
+  }
+
+  // При изменении даты обновляем брони
+  dateInput.addEventListener('change', () => {
+    loadExisting();
+    // Сброс выборов
+    currentLane = currentStart = null;
+    for (let k in intervalsByLane) intervalsByLane[k] = [];
+    clearStartTimeHighlight();
+    clearHeaderHighlight();
+    clearVerticalLines();
+    updateTableSelection();
+  });
+
+  // Инициализация
+  document.addEventListener('DOMContentLoaded', () => {
+    loadExisting();
+    updateTableSelection();
+  });
+
+  document.getElementById("openImage").onclick = () => {
+    document.getElementById("imagePopup").style.display = "flex";
+  };
+  function closeImagePopup() {
+    document.getElementById("imagePopup").style.display = "none";
+  }
+</script>
 
 </body>
 </html>
