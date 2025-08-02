@@ -10,6 +10,8 @@
       --main-color: #1a2f40;
       --highlight-color: #dc143c;
       --highlight-bg: #dc143c33;
+      --confirmed-color: #28a745;
+      --rejected-color: #6c757d;
     }
 
     @media (max-width: 768px) {
@@ -283,21 +285,28 @@
     }
     .existing-slider {
       position: absolute;
-      background: #1a2f40;
+      background: var(--main-color);
       border: none;
-      color: var(--main-color);
+      color: white;
       border-radius: 6px;
       pointer-events: auto;
       box-sizing: border-box;
       cursor: pointer;
       font-size: 10px;
-      color: var(--main-color);
       font-weight: bold;
       padding: 2px 4px;
       user-select: none;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+    }
+
+    /* Стили для разных статусов брони */
+    .existing-slider.confirmed {
+      background-color: var(--confirmed-color);
+    }
+    .existing-slider.rejected {
+      background-color: var(--rejected-color);
     }
 
     /* Модальное окно информации о брони */
@@ -310,30 +319,30 @@
       justify-content: center;
       align-items: center;
     }
-.booking-info-popup .popup-content {
-  position: relative;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 90vw;
-  width: 400px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-}
+    .booking-info-popup .popup-content {
+      position: relative;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90vw;
+      width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
 
-.booking-info-popup .close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: var(--main-color);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 0 5px rgba(0,0,0,0.3);
-}
+    .booking-info-popup .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--main-color);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
 
     .booking-info-popup h3 {
       margin-top: 0;
@@ -686,7 +695,7 @@
   }
 
   // Функция подтверждения брони (да/нет)
-function confirmBooking(confirmed) {
+  function confirmBooking(confirmed) {
     if (!currentBookingId) return;
     
     // Отправляем данные на сервер
@@ -706,7 +715,7 @@ function confirmBooking(confirmed) {
       console.error("Ошибка при обновлении статуса брони:", error);
       alert("Произошла ошибка при обновлении статуса брони");
     });
-}
+  }
 
   // Загрузка существующих броней с сервера
   async function loadExisting() {
@@ -754,11 +763,18 @@ function confirmBooking(confirmed) {
           // Создаем ползунок
           const slider = document.createElement("div");
           slider.className = "existing-slider";
+          
+          // Добавляем класс в зависимости от статуса брони
+          if (b.confirmed === "Да") {
+            slider.classList.add("confirmed");
+          } else if (b.confirmed === "Нет") {
+            slider.classList.add("rejected");
+          }
+          
           slider.style.top = `${startTimeCell.offsetTop}px`;
           slider.style.left = `${startCellRect.left - tableRect.left}px`;
           slider.style.width = `${startCellRect.width}px`;
           slider.style.height = `${height}px`;
-          slider.textContent = b.name;
           
           // Добавляем обработчик клика
           slider.addEventListener('click', (e) => {
