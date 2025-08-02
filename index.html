@@ -288,7 +288,7 @@
       border-radius: 6px;
       pointer-events: auto;
       box-sizing: border-box;
-      cursor: default;
+      cursor: pointer;
       font-size: 10px;
       color: var(--main-color);
       font-weight: bold;
@@ -297,6 +297,47 @@
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+    }
+
+    /* Модальное окно информации о брони */
+    .booking-info-popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .booking-info-popup .popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90vw;
+      width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    .booking-info-popup .close-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: var(--main-color);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px; height: 30px; font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+    .booking-info-popup h3 {
+      margin-top: 0;
+      color: var(--main-color);
+    }
+    .booking-info-popup .info-row {
+      margin-bottom: 10px;
+    }
+    .booking-info-popup .info-label {
+      font-weight: bold;
+      color: var(--main-color);
     }
   </style>
 </head>
@@ -348,6 +389,32 @@
     </div>
   </div>
 
+  <!-- Модальное окно информации о брони -->
+  <div id="bookingInfoPopup" class="booking-info-popup">
+    <div class="popup-content">
+      <button class="close-btn" onclick="closeBookingInfoPopup()">&times;</button>
+      <h3>Информация о бронировании</h3>
+      <div class="info-row">
+        <span class="info-label">Стол:</span> <span id="info-table"></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Дата:</span> <span id="info-date"></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Время:</span> <span id="info-time"></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Имя:</span> <span id="info-name"></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Телефон:</span> <span id="info-phone"></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Комментарий:</span> <span id="info-comment"></span>
+      </div>
+    </div>
+  </div>
+
 <script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbzsppWhfu0rmPYBZSnKGawVkiOYzfSc2q-AB9jIfi2h6Yv4bywDS9jQI0Kyk-WB1p-K/exec";
 
@@ -389,7 +456,7 @@
   const intervalsByLane = {};
   let currentLane = null, currentStart = null;
 
-  // --- Работа с визуалом выбора интервалов (твоя логика) ---
+  // --- Работа с визуалом выбора интервалов ---
   function clearStartTimeHighlight() {
     document.querySelectorAll('td.start-time-chosen').forEach(c => c.classList.remove('start-time-chosen'));
   }
@@ -563,6 +630,22 @@
     loadExisting(); // обновим бронь после отправки
   }
 
+  // Функция для отображения информации о брони
+  function showBookingInfo(booking) {
+    document.getElementById('info-table').textContent = `№${booking.table}`;
+    document.getElementById('info-date').textContent = booking.date.split('-').reverse().join('.');
+    document.getElementById('info-time').textContent = `${formatTime(booking.start)} - ${formatTime(booking.end)}`;
+    document.getElementById('info-name').textContent = booking.name;
+    document.getElementById('info-phone').textContent = booking.phone;
+    document.getElementById('info-comment').textContent = booking.comment || 'нет комментария';
+    document.getElementById('bookingInfoPopup').style.display = 'flex';
+  }
+
+  // Функция для закрытия окна информации
+  function closeBookingInfoPopup() {
+    document.getElementById('bookingInfoPopup').style.display = 'none';
+  }
+
   // Загрузка существующих броней с сервера
   async function loadExisting() {
     slidersContainer.innerHTML = "";
@@ -571,40 +654,57 @@
       const data = await res.json();
       if (!data.bookings || !data.bookings.length) return;
 
-      // Рассчитаем размеры и позицию таблицы
-      const rect = bookingTable.getBoundingClientRect();
+      // Получаем все ячейки времени (правый столбец)
+      const timeCells = Array.from(document.querySelectorAll('th.time-right'));
+      
+      // Получаем все ячейки таблицы
+      const tableCells = Array.from(document.querySelectorAll('td.slot'));
       
       data.bookings.forEach(b => {
-        if (b.date === dateInput.value){
-          
-          // b.tableNumber: 1..12, b.start, b.end: числа с 0.5 шагом (например 11, 11.5, 12 и т.п)
+        if (b.date === dateInput.value) {
           const laneIndex = b.table - 1;
-          const start = b.start+0.5;
-          const end = b.end+0.5;
-          const cell = document.querySelector(`#tableBody > tr:nth-child(${start*2-22}) > td:nth-child(${laneIndex+1})`).getBoundingClientRect();
-          const cellHeight = cell.height; 
-          const cellWidth = cell.width; 
-          const x_offset = cell.left-10;
-          const y_offset = cell.top-10;
+          const start = parseFloat(b.start);
+          const end = parseFloat(b.end);
           
-        // Позиционирование по таблице
-        const topIndex = timeSlots.findIndex(ts => ts.key === start);
-        const bottomIndex = timeSlots.findIndex(ts => ts.key === end);
-        
-        // Если время не найдено (например если данные некорректны), пропускаем
-        if (topIndex === -1 || bottomIndex === -1) return;
-        
-        // Создаем ползунок
-        const slider = document.createElement("div");
-        slider.className = "existing-slider";
-        slider.style.top = (y_offset) + "px";
-        slider.style.height = ((bottomIndex - topIndex + 1) * cellHeight) + "px"; // -4 для отступа
-        slider.style.left = x_offset + "px"; // +2 для отступа
-        slider.style.width = cellWidth + "px";
-        slider.title = `Стол №${b.table}\n${b.date}\nс ${formatTime(start)} по ${formatTime(end)}\n${b.name} ${b.phone}`;
-        slider.textContent = b.name;
-        
-        slidersContainer.appendChild(slider);
+          // Находим индексы временных слотов
+          const startIndex = timeSlots.findIndex(ts => ts.key === start);
+          const endIndex = timeSlots.findIndex(ts => ts.key === end);
+          
+          if (startIndex === -1 || endIndex === -1) return;
+          
+          // Находим ячейку начала брони
+          const startCell = tableCells.find(cell => 
+            parseInt(cell.dataset.lane) === laneIndex && 
+            parseFloat(cell.dataset.time) === start
+          );
+          
+          if (!startCell) return;
+          
+          // Получаем позицию и размеры ячейки начала
+          const startCellRect = startCell.getBoundingClientRect();
+          const tableRect = bookingTable.getBoundingClientRect();
+          
+          // Рассчитываем высоту блока брони
+          const startTimeCell = timeCells[startIndex];
+          const endTimeCell = timeCells[endIndex];
+          const height = endTimeCell.offsetTop + endTimeCell.offsetHeight - startTimeCell.offsetTop;
+          
+          // Создаем ползунок
+          const slider = document.createElement("div");
+          slider.className = "existing-slider";
+          slider.style.top = `${startTimeCell.offsetTop}px`;
+          slider.style.left = `${startCellRect.left - tableRect.left}px`;
+          slider.style.width = `${startCellRect.width}px`;
+          slider.style.height = `${height}px`;
+          slider.textContent = b.name;
+          
+          // Добавляем обработчик клика
+          slider.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showBookingInfo(b);
+          });
+          
+          slidersContainer.appendChild(slider);
         }
       });
     } catch(e) {
