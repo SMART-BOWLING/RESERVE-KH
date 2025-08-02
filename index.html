@@ -346,6 +346,28 @@
       font-weight: bold;
       color: var(--main-color);
     }
+    
+    /* Стили для кнопок подтверждения брони */
+    .confirmation-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    .confirmation-buttons button {
+      padding: 8px 16px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .confirm-yes {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .confirm-no {
+      background-color: #f44336;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -419,11 +441,18 @@
       <div class="info-row">
         <span class="info-label">Комментарий:</span> <span id="info-comment"></span>
       </div>
+      <div class="info-row">
+        <span class="info-label">Бронь пришла?</span>
+      </div>
+      <div class="confirmation-buttons">
+        <button class="confirm-yes" onclick="confirmBooking(true)">Да</button>
+        <button class="confirm-no" onclick="confirmBooking(false)">Нет</button>
+      </div>
     </div>
   </div>
 
 <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbzsppWhfu0rmPYBZSnKGawVkiOYzfSc2q-AB9jIfi2h6Yv4bywDS9jQI0Kyk-WB1p-K/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyouNXG2wiSJtKKb3OwM-M5RK2KMYxjsBoAxOWPxbVZErMRXHTiK-Kfez0uaxbRhLAv/exec";
 
   // Инициализация календаря
   const dateInput = document.getElementById('dateInput');
@@ -462,6 +491,7 @@
 
   const intervalsByLane = {};
   let currentLane = null, currentStart = null;
+  let currentBookingId = null; // Для хранения ID текущей брони
 
   // --- Работа с визуалом выбора интервалов ---
   function clearStartTimeHighlight() {
@@ -646,12 +676,37 @@
     document.getElementById('info-phone').textContent = booking.phone;
     document.getElementById('info-comment').textContent = booking.comment || 'нет комментария';
     document.getElementById('bookingInfoPopup').style.display = 'flex';
+    currentBookingId = booking.id; // Сохраняем ID брони для подтверждения
   }
 
   // Функция для закрытия окна информации
   function closeBookingInfoPopup() {
     document.getElementById('bookingInfoPopup').style.display = 'none';
+    currentBookingId = null;
   }
+
+  // Функция подтверждения брони (да/нет)
+function confirmBooking(confirmed) {
+    if (!currentBookingId) return;
+    
+    // Отправляем данные на сервер
+    fetch(GAS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ 
+        action: "confirm",
+        id: currentBookingId,
+        confirmed: confirmed // Отправляем булево значение, а не строку
+      })
+    }).then(() => {
+      alert(`Статус брони обновлен: ${confirmed ? "Да" : "Нет"}`);
+      closeBookingInfoPopup();
+      loadExisting(); // Обновляем список броней
+    }).catch(error => {
+      console.error("Ошибка при обновлении статуса брони:", error);
+      alert("Произошла ошибка при обновлении статуса брони");
+    });
+}
 
   // Загрузка существующих броней с сервера
   async function loadExisting() {
