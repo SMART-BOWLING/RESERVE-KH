@@ -10,6 +10,7 @@
       --main-color: #1a2f40;
       --highlight-color: #dc143c;
       --highlight-bg: #dc143c33;
+      --existing-booking-color: #f0f2f5; /* Цвет фона сайта */
     }
 
     @media (max-width: 768px) {
@@ -283,8 +284,8 @@
     }
     .existing-slider {
       position: absolute;
-      background: var(--highlight-bg);
-      border: 1.5px solid var(--highlight-color);
+      background: var(--existing-booking-color); /* Используем цвет фона сайта */
+      border: 1.5px solid var(--main-color); /* Граница в цвет основного цвета */
       border-radius: 6px;
       pointer-events: auto;
       box-sizing: border-box;
@@ -297,6 +298,7 @@
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+      opacity: 1; /* Убираем прозрачность */
     }
 
     /* Модальное окно информации о брони */
