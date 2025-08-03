@@ -11,7 +11,7 @@
       --highlight-color: #dc143c;
       --highlight-bg: #dc143c33;
       --confirmed-color: #28a745;
-      --rejected-color: #6c757d;
+      --rejected-color: #dc143c;
     }
 
     @media (max-width: 768px) {
@@ -29,6 +29,13 @@
       align-items: center;
     }
 
+    .table-container {
+      position: relative;
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: auto;
+    }
+
     table {
       border-collapse: separate;
       border-spacing: 2px 0;
@@ -36,9 +43,6 @@
       max-width: 100vw;
       user-select: none;
       touch-action: manipulation;
-      overflow: auto;
-      display: block;
-      position: relative;
     }
 
     thead th {
@@ -276,10 +280,13 @@
       box-shadow: 0 0 5px rgba(0,0,0,0.3);
     }
 
-    /* Новый слой для ползунков существующих броней */
+    /* Слой для ползунков существующих броней */
     #slidersContainer {
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
       z-index: 5;
     }
@@ -397,7 +404,7 @@
 </head>
 <body>
 
-  <div style="position: relative; width: 100%; max-width: 100vw; display: flex; justify-content: center">
+  <div class="table-container">
     <table id="bookingTable">
       <thead>
         <tr>
@@ -490,7 +497,8 @@
   const tableBody = document.getElementById("tableBody"),
         cardsContainer = document.getElementById("cardsContainer"),
         slidersContainer = document.getElementById("slidersContainer"),
-        bookingTable = document.getElementById("bookingTable");
+        bookingTable = document.getElementById("bookingTable"),
+        tableContainer = document.querySelector(".table-container");
 
   const timeSlots = [];
   for (let h = startHour; h < endHour; h++) {
@@ -722,7 +730,7 @@
       body: JSON.stringify({ 
         action: "confirm",
         id: currentBookingId,
-        confirmed: confirmed // Отправляем булево значение, а не строку
+        confirmed: confirmed
       })
     }).then(() => {
       alert(`Статус брони обновлен: ${confirmed ? "Да" : "Нет"}`);
@@ -772,6 +780,10 @@
       // Получаем все ячейки таблицы
       const tableCells = Array.from(document.querySelectorAll('td.slot'));
       
+      // Получаем позицию контейнера таблицы
+      const containerRect = tableContainer.getBoundingClientRect();
+      const tableRect = bookingTable.getBoundingClientRect();
+      
       data.bookings.forEach(b => {
         if (b.date === dateInput.value) {
           const laneIndex = b.table - 1;
@@ -792,14 +804,17 @@
           
           if (!startCell) return;
           
-          // Получаем позицию и размеры ячейки начала
+          // Получаем позицию ячейки начала относительно контейнера
           const startCellRect = startCell.getBoundingClientRect();
-          const tableRect = bookingTable.getBoundingClientRect();
           
           // Рассчитываем высоту блока брони
           const startTimeCell = timeCells[startIndex];
           const endTimeCell = timeCells[endIndex];
           const height = endTimeCell.offsetTop + endTimeCell.offsetHeight - startTimeCell.offsetTop;
+          
+          // Рассчитываем позицию ползунка относительно контейнера
+          const left = startCellRect.left - containerRect.left;
+          const top = startTimeCell.offsetTop;
           
           // Создаем ползунок
           const slider = document.createElement("div");
@@ -812,8 +827,8 @@
             slider.classList.add("rejected");
           }
           
-          slider.style.top = `${startTimeCell.offsetTop}px`;
-          slider.style.left = `${startCellRect.left - tableRect.left}px`;
+          slider.style.top = `${top}px`;
+          slider.style.left = `${left}px`;
           slider.style.width = `${startCellRect.width}px`;
           slider.style.height = `${height}px`;
           
