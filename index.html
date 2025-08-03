@@ -446,9 +446,43 @@
     .delete-btn:hover {
       background-color: #b01030;
     }
+
+    /* Анимация загрузки */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      display: none;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid var(--main-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Добавлен блок для анимации загрузки -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+  </div>
 
   <div class="table-container">
     <table id="bookingTable">
@@ -544,7 +578,8 @@
         cardsContainer = document.getElementById("cardsContainer"),
         slidersContainer = document.getElementById("slidersContainer"),
         bookingTable = document.getElementById("bookingTable"),
-        tableContainer = document.querySelector(".table-container");
+        tableContainer = document.querySelector(".table-container"),
+        loadingOverlay = document.getElementById("loadingOverlay");
 
   const timeSlots = [];
   for (let h = startHour; h < endHour; h++) {
@@ -572,6 +607,15 @@
   const intervalsByLane = {};
   let currentLane = null, currentStart = null;
   let currentBookingId = null; // Для хранения ID текущей брони
+
+  // Функции для показа/скрытия загрузки
+  function showLoading() {
+    loadingOverlay.style.display = 'flex';
+  }
+
+  function hideLoading() {
+    loadingOverlay.style.display = 'none';
+  }
 
   // --- Работа с визуалом выбора интервалов ---
   function clearStartTimeHighlight() {
@@ -725,26 +769,33 @@
     }
     if (!bookings.length) return alert("Нет выбранных интервалов.");
 
-    bookings.forEach(b => {
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({ bookings: [b] })
-      });
-    });
-
-    alert("Бронирование отправлено!");
-    closeModal();
-    for (let l in intervalsByLane) intervalsByLane[l] = [];
-    currentLane = currentStart = null;
-    clearStartTimeHighlight();
-    clearHeaderHighlight();
-    clearVerticalLines();
-    updateTableSelection();
-    document.getElementById("nameInput").value = "";
-    document.getElementById("phoneInput").value = "";
-    document.getElementById("commentInput").value = "";
-    loadExisting(); // обновим бронь после отправки
+    showLoading();
+    try {
+      for (const b of bookings) {
+        await fetch(GAS_URL, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify({ bookings: [b] })
+        });
+      }
+      alert("Бронирование отправлено!");
+      closeModal();
+      for (let l in intervalsByLane) intervalsByLane[l] = [];
+      currentLane = currentStart = null;
+      clearStartTimeHighlight();
+      clearHeaderHighlight();
+      clearVerticalLines();
+      updateTableSelection();
+      document.getElementById("nameInput").value = "";
+      document.getElementById("phoneInput").value = "";
+      document.getElementById("commentInput").value = "";
+      await loadExisting(); // обновим бронь после отправки
+    } catch (error) {
+      console.error("Ошибка при отправке бронирования:", error);
+      alert("Произошла ошибка при отправке бронирования");
+    } finally {
+      hideLoading();
+    }
   }
 
   // Функция для отображения информации о брони
@@ -769,6 +820,7 @@
   function confirmBooking(confirmed) {
     if (!currentBookingId) return;
     
+    showLoading();
     // Отправляем данные на сервер
     fetch(GAS_URL, {
       method: "POST",
@@ -785,6 +837,8 @@
     }).catch(error => {
       console.error("Ошибка при обновлении статуса брони:", error);
       alert("Произошла ошибка при обновлении статуса брони");
+    }).finally(() => {
+      hideLoading();
     });
   }
   
@@ -794,6 +848,7 @@
     
     if (!confirm("Вы уверены, что хотите удалить эту бронь?")) return;
     
+    showLoading();
     // Отправляем запрос на удаление
     fetch(GAS_URL, {
       method: "POST",
@@ -809,11 +864,14 @@
     }).catch(error => {
       console.error("Ошибка при удалении брони:", error);
       alert("Произошла ошибка при удалении брони");
+    }).finally(() => {
+      hideLoading();
     });
   }
 
   // Загрузка существующих броней с сервера
   async function loadExisting() {
+    showLoading();
     slidersContainer.innerHTML = "";
     try {
       const res = await fetch(GAS_URL + "?action=get&date=" + dateInput.value);
@@ -889,6 +947,8 @@
       });
     } catch(e) {
       console.error("Ошибка загрузки бронирований:", e);
+    } finally {
+      hideLoading();
     }
   }
 
