@@ -15,8 +15,41 @@
     }
 
     @media (max-width: 768px) {
-      :root { --cell-size: calc((100vw - 20px) / 13); }
-      td, th { aspect-ratio: 1; height: auto; }
+      :root { 
+        --cell-size: calc((100vw - 20px) / 13); 
+      }
+      
+      table {
+        width: auto !important;
+        margin: 0 auto;
+      }
+      
+      td, th {
+        aspect-ratio: 1;
+        width: var(--cell-size) !important;
+        height: var(--cell-size) !important;
+        min-width: auto !important;
+        max-width: none !important;
+      }
+      
+      body {
+        padding: 5px;
+      }
+      
+      .table-container {
+        padding: 0;
+        width: 100%;
+      }
+      
+      #controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      #dateInput, .booking-button {
+        width: 100%;
+        margin: 5px 0;
+      }
     }
 
     body {
@@ -34,6 +67,9 @@
       width: 100%;
       max-width: 100vw;
       overflow-x: auto;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
     }
 
     table {
@@ -43,6 +79,7 @@
       max-width: 100vw;
       user-select: none;
       touch-action: manipulation;
+      margin: 0 auto;
     }
 
     thead th {
