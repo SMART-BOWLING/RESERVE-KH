@@ -42,13 +42,26 @@
       }
       
       #controls {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
       }
       
-      #dateInput, .booking-button {
-        width: 100%;
+      #dateInput {
+        flex: 1;
         margin: 5px 0;
+      }
+      
+      .booking-button {
+        flex: 1;
+        margin: 5px 0;
+      }
+      
+      #controls {
+        display: flex;
+        width: 100%;
+        padding: 0 5px;
+        box-sizing: border-box;
       }
     }
 
@@ -463,8 +476,8 @@
   <div id="cardsContainer"></div>
 
   <div id="controls">
-    <input type="date" id="dateInput" />
     <button class="booking-button" onclick="openModal()">ЗАБРОНИРОВАТЬ</button>
+    <input type="date" id="dateInput" />
   </div>
 
   <div id="modal">
