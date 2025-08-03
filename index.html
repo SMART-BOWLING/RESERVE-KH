@@ -377,6 +377,22 @@
       background-color: #f44336;
       color: white;
     }
+    
+    /* Стили для кнопки удаления */
+    .delete-btn {
+      background-color: #dc143c;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .delete-btn:hover {
+      background-color: #b01030;
+    }
   </style>
 </head>
 <body>
@@ -457,11 +473,12 @@
         <button class="confirm-yes" onclick="confirmBooking(true)">Да</button>
         <button class="confirm-no" onclick="confirmBooking(false)">Нет</button>
       </div>
+      <button class="delete-btn" onclick="deleteBooking()">УДАЛИТЬ БРОНЬ</button>
     </div>
   </div>
 
 <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbyouNXG2wiSJtKKb3OwM-M5RK2KMYxjsBoAxOWPxbVZErMRXHTiK-Kfez0uaxbRhLAv/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyAsc_NyIHHC5ZgyLXI-jd3ovmyBoNpQl9-WTLZ3-12CoaxYJAUOltOMZeLxLy8PBIt/exec";
 
   // Инициализация календаря
   const dateInput = document.getElementById('dateInput');
@@ -714,6 +731,30 @@
     }).catch(error => {
       console.error("Ошибка при обновлении статуса брони:", error);
       alert("Произошла ошибка при обновлении статуса брони");
+    });
+  }
+  
+  // Функция удаления брони
+  function deleteBooking() {
+    if (!currentBookingId) return;
+    
+    if (!confirm("Вы уверены, что хотите удалить эту бронь?")) return;
+    
+    // Отправляем запрос на удаление
+    fetch(GAS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ 
+        action: "delete",
+        id: currentBookingId
+      })
+    }).then(() => {
+      alert("Бронь успешно удалена!");
+      closeBookingInfoPopup();
+      loadExisting(); // Обновляем список броней
+    }).catch(error => {
+      console.error("Ошибка при удалении брони:", error);
+      alert("Произошла ошибка при удалении брони");
     });
   }
 
