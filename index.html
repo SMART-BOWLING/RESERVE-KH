@@ -9,7 +9,7 @@
       --cell-size: 50px;
       --main-color: #1e3a8a;
       --highlight-color: #ef4444;
-      --highlight-bg: linear-gradient(145deg, #ef4444, #dc2626);
+      --highlight-bg: #ef4444; /* Убрали градиент, оставили только розовый */
       --confirmed-color: #16a34a;
       --rejected-color: #b91c1c;
       --background-color: #f8fafc;
@@ -158,7 +158,7 @@
     }
 
     td.selected {
-      background: linear-gradient(145deg, #fecaca, #f87171) !important;
+      background: var(--highlight-bg) !important; /* Убрали градиент */
       border: none !important;
       z-index: 1;
       color: #7f1d1d;
@@ -259,6 +259,13 @@
     .booking-button:active {
       transform: translateY(1px);
       box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+    }
+    
+    /* Стиль для нажатой кнопки */
+    .booking-button.pressed {
+      background: var(--highlight-bg);
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
     }
 
     #modal {
@@ -451,10 +458,10 @@
 
     /* Стили для разных статусов брони */
     .existing-slider.confirmed {
-      background: linear-gradient(145deg, var(--confirmed-color), #15803d);
+      background: var(--confirmed-color); /* Убрали градиент */
     }
     .existing-slider.rejected {
-      background: linear-gradient(145deg, var(--rejected-color), #991b1b);
+      background: var(--rejected-color); /* Убрали градиент */
     }
 
     /* Модальное окно информации о брони */
@@ -538,7 +545,7 @@
       box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     }
     .confirm-yes {
-      background: linear-gradient(145deg, var(--confirmed-color), #15803d);
+      background: var(--confirmed-color); /* Убрали градиент */
       color: white;
     }
     .confirm-yes:hover {
@@ -546,7 +553,7 @@
       box-shadow: 0 5px 10px rgba(22, 163, 74, 0.3);
     }
     .confirm-no {
-      background: linear-gradient(145deg, var(--rejected-color), #991b1b);
+      background: var(--rejected-color); /* Убрали градиент */
       color: white;
     }
     .confirm-no:hover {
@@ -571,7 +578,35 @@
     .delete-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 5px 12px rgba(0,0,0,0.2);
-      background: linear-gradient(145deg, #ef4444, #dc2626);
+      background: var(--highlight-bg); /* Убрали градиент */
+    }
+    
+    /* Анимация загрузки */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid var(--main-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -657,9 +692,14 @@
       <button class="delete-btn" onclick="deleteBooking()">УДАЛИТЬ БРОНЬ</button>
     </div>
   </div>
+  
+  <!-- Оверлей загрузки -->
+  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+  </div>
 
 <script>
-  // JavaScript код без изменений
+  // JavaScript код с изменениями
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxfRLDGA29FrqKS61HmYN_FUnDwOydeCaEdeW4oc4wyroQzvb4h1OnwQ5HeotIHhcj9/exec";
 
   // Инициализация календаря
@@ -673,7 +713,8 @@
         cardsContainer = document.getElementById("cardsContainer"),
         slidersContainer = document.getElementById("slidersContainer"),
         bookingTable = document.getElementById("bookingTable"),
-        tableContainer = document.querySelector(".table-container");
+        tableContainer = document.querySelector(".table-container"),
+        loadingOverlay = document.getElementById("loadingOverlay");
 
   const timeSlots = [];
   for (let h = startHour; h < endHour; h++) {
@@ -826,6 +867,11 @@
       return alert("Сначала выберите время.");
     }
     document.getElementById("modal").style.display = "flex";
+    
+    // Добавляем эффект нажатия на кнопку
+    const btn = document.querySelector('.booking-button');
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 200);
   }
   function closeModal() {
     document.getElementById("modal").style.display = "none";
@@ -854,26 +900,41 @@
     }
     if (!bookings.length) return alert("Нет выбранных интервалов.");
 
-    bookings.forEach(b => {
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({ bookings: [b] })
-      });
-    });
-
-    alert("Бронирование отправлено!");
-    closeModal();
-    for (let l in intervalsByLane) intervalsByLane[l] = [];
-    currentLane = currentStart = null;
-    clearStartTimeHighlight();
-    clearHeaderHighlight();
-    clearVerticalLines();
-    updateTableSelection();
-    document.getElementById("nameInput").value = "";
-    document.getElementById("phoneInput").value = "";
-    document.getElementById("commentInput").value = "";
-    loadExisting(); // обновим бронь после отправки
+    try {
+      // Показываем анимацию загрузки
+      loadingOverlay.style.display = 'flex';
+      
+      // Отправляем все бронирования
+      await Promise.all(bookings.map(b => {
+        return fetch(GAS_URL, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify({ bookings: [b] })
+        });
+      }));
+      
+      // Скрываем анимацию загрузки
+      loadingOverlay.style.display = 'none';
+      
+      // Очищаем форму
+      closeModal();
+      for (let l in intervalsByLane) intervalsByLane[l] = [];
+      currentLane = currentStart = null;
+      clearStartTimeHighlight();
+      clearHeaderHighlight();
+      clearVerticalLines();
+      updateTableSelection();
+      document.getElementById("nameInput").value = "";
+      document.getElementById("phoneInput").value = "";
+      document.getElementById("commentInput").value = "";
+      
+      // Обновляем существующие брони
+      await loadExisting();
+    } catch (error) {
+      loadingOverlay.style.display = 'none';
+      console.error("Ошибка при отправке бронирования:", error);
+      alert("Произошла ошибка при отправке бронирования");
+    }
   }
 
   // Функция для отображения информации о брони
@@ -895,58 +956,81 @@
   }
 
   // Функция подтверждения брони (да/нет)
-  function confirmBooking(confirmed) {
+  async function confirmBooking(confirmed) {
     if (!currentBookingId) return;
     
-    // Отправляем данные на сервер
-    fetch(GAS_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({ 
-        action: "confirm",
-        id: currentBookingId,
-        confirmed: confirmed
-      })
-    }).then(() => {
-      alert(`Статус брони обновлен: ${confirmed ? "Да" : "Нет"}`);
+    try {
+      // Показываем анимацию загрузки
+      loadingOverlay.style.display = 'flex';
+      
+      // Отправляем данные на сервер
+      await fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ 
+          action: "confirm",
+          id: currentBookingId,
+          confirmed: confirmed
+        })
+      });
+      
+      // Скрываем анимацию загрузки
+      loadingOverlay.style.display = 'none';
+      
       closeBookingInfoPopup();
-      loadExisting(); // Обновляем список броней
-    }).catch(error => {
+      await loadExisting(); // Обновляем список броней
+    } catch(error) {
+      loadingOverlay.style.display = 'none';
       console.error("Ошибка при обновлении статуса брони:", error);
       alert("Произошла ошибка при обновлении статуса брони");
-    });
+    }
   }
   
   // Функция удаления брони
-  function deleteBooking() {
+  async function deleteBooking() {
     if (!currentBookingId) return;
     
     if (!confirm("Вы уверены, что хотите удалить эту бронь?")) return;
     
-    // Отправляем запрос на удаление
-    fetch(GAS_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({ 
-        action: "delete",
-        id: currentBookingId
-      })
-    }).then(() => {
-      alert("Бронь успешно удалена!");
+    try {
+      // Показываем анимацию загрузки
+      loadingOverlay.style.display = 'flex';
+      
+      // Отправляем запрос на удаление
+      await fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ 
+          action: "delete",
+          id: currentBookingId
+        })
+      });
+      
+      // Скрываем анимацию загрузки
+      loadingOverlay.style.display = 'none';
+      
       closeBookingInfoPopup();
-      loadExisting(); // Обновляем список броней
-    }).catch(error => {
+      await loadExisting(); // Обновляем список броней
+    } catch(error) {
+      loadingOverlay.style.display = 'none';
       console.error("Ошибка при удалении брони:", error);
       alert("Произошла ошибка при удалении брони");
-    });
+    }
   }
 
   // Загрузка существующих броней с сервера
   async function loadExisting() {
-    slidersContainer.innerHTML = "";
     try {
+      // Показываем анимацию загрузки
+      loadingOverlay.style.display = 'flex';
+      
+      slidersContainer.innerHTML = "";
       const res = await fetch(GAS_URL + "?action=get&date=" + dateInput.value);
       const data = await res.json();
+      
+      // Скрываем анимацию загрузки
+      loadingOverlay.style.display = 'none';
+      
       if (!data.bookings || !data.bookings.length) return;
 
       // Получаем все ячейки времени (правый столбец)
@@ -1017,6 +1101,8 @@
         }
       });
     } catch(e) {
+      // Скрываем анимацию загрузки в случае ошибки
+      loadingOverlay.style.display = 'none';
       console.error("Ошибка загрузки бронирований:", e);
     }
   }
@@ -1028,8 +1114,8 @@
   }
 
   // При изменении даты обновляем брони
-  dateInput.addEventListener('change', () => {
-    loadExisting();
+  dateInput.addEventListener('change', async () => {
+    await loadExisting();
     // Сброс выборов
     currentLane = currentStart = null;
     for (let k in intervalsByLane) intervalsByLane[k] = [];
@@ -1040,8 +1126,8 @@
   });
 
   // Инициализация
-  document.addEventListener('DOMContentLoaded', () => {
-    loadExisting();
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadExisting();
     updateTableSelection();
   });
 
