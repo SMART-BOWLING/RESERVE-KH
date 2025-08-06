@@ -521,11 +521,16 @@
     .booking-info-popup .info-row {
       margin-bottom: 15px;
       display: flex;
+      justify-content: space-between;
     }
     .booking-info-popup .info-label {
       font-weight: 600;
       color: var(--main-color);
       min-width: 120px;
+    }
+    .booking-info-popup .info-value {
+      text-align: right;
+      flex-grow: 1;
     }
     
     /* Стили для кнопок подтверждения брони */
@@ -666,25 +671,26 @@
       <button class="close-btn" onclick="closeBookingInfoPopup()">&times;</button>
       <h3>Информация о бронировании</h3>
       <div class="info-row">
-        <span class="info-label">Стол:</span> <span id="info-table"></span>
+        <span class="info-label">Стол:</span> <span id="info-table" class="info-value"></span>
       </div>
       <div class="info-row">
-        <span class="info-label">Дата:</span> <span id="info-date"></span>
+        <span class="info-label">Дата:</span> <span id="info-date" class="info-value"></span>
       </div>
       <div class="info-row">
-        <span class="info-label">Время:</span> <span id="info-time"></span>
+        <span class="info-label">Время:</span> <span id="info-time" class="info-value"></span>
       </div>
       <div class="info-row">
-        <span class="info-label">Имя:</span> <span id="info-name"></span>
+        <span class="info-label">Имя:</span> <span id="info-name" class="info-value"></span>
       </div>
       <div class="info-row">
-        <span class="info-label">Телефон:</span> <span id="info-phone"></span>
+        <span class="info-label">Телефон:</span> <span id="info-phone" class="info-value"></span>
       </div>
       <div class="info-row">
-        <span class="info-label">Комментарий:</span> <span id="info-comment"></span>
+        <span class="info-label">Комментарий:</span> <span id="info-comment" class="info-value"></span>
       </div>
       <div class="info-row">
         <span class="info-label">Бронь пришла?</span>
+        <span id="info-confirmed" class="info-value"></span>
       </div>
       <div class="confirmation-buttons">
         <button class="confirm-yes" onclick="confirmBooking(true)">Да</button>
@@ -946,6 +952,7 @@
     document.getElementById('info-name').textContent = booking.name;
     document.getElementById('info-phone').textContent = booking.phone;
     document.getElementById('info-comment').textContent = booking.comment || 'нет комментария';
+    document.getElementById('info-confirmed').textContent = booking.confirmed || '';
     document.getElementById('bookingInfoPopup').style.display = 'flex';
     currentBookingId = booking.id; // Сохраняем ID брони для подтверждения
   }
